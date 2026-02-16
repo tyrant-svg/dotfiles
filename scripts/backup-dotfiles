@@ -1,0 +1,60 @@
+#!/bin/bash
+# Backup critical configuration files
+# Usage: backup-dotfiles
+
+BACKUP_DIR="$HOME/Backups/dotfiles-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+echo "Creating dotfiles backup..."
+
+# Critical configs
+echo "  - Sway configuration"
+cp -r ~/.config/sway "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Waybar configuration"
+cp -r ~/.config/waybar "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Kitty configuration"
+cp -r ~/.config/kitty "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Mako configuration"
+cp -r ~/.config/mako "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Wofi configuration"
+cp -r ~/.config/wofi "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Shell configurations"
+cp ~/.bashrc "$BACKUP_DIR/" 2>/dev/null || true
+cp ~/.bash_profile "$BACKUP_DIR/" 2>/dev/null || true
+cp ~/.zshrc "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Local scripts"
+mkdir -p "$BACKUP_DIR/local-bin"
+cp -r ~/.local/bin/* "$BACKUP_DIR/local-bin/" 2>/dev/null || true
+
+echo "  - Git configurations"
+cp ~/.gitconfig "$BACKUP_DIR/" 2>/dev/null || true
+cp -r ~/.config/lazygit "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - Tmux/Zellij configurations"
+cp ~/.tmux.conf "$BACKUP_DIR/" 2>/dev/null || true
+cp -r ~/.config/zellij "$BACKUP_DIR/" 2>/dev/null || true
+
+echo "  - VSCode settings"
+cp -r ~/.config/Code\ -\ OSS/User "$BACKUP_DIR/vscode-user" 2>/dev/null || true
+
+# Create archive
+cd ~/Backups || exit
+tar -czf "dotfiles-$(date +%Y%m%d-%H%M%S).tar.gz" "$(basename "$BACKUP_DIR")"
+rm -rf "$BACKUP_DIR"
+
+# Keep only last 10 backups
+ls -t dotfiles-*.tar.gz | tail -n +11 | xargs -r rm
+
+LATEST=$(ls -t dotfiles-*.tar.gz | head -1)
+SIZE=$(du -h "$LATEST" | cut -f1)
+
+notify-send "Dotfiles Backup Complete" "Size: $SIZE\nLocation: ~/Backups/"
+echo ""
+echo "Dotfiles backed up to: ~/Backups/$LATEST ($SIZE)"
+echo "Kept last 10 backups in ~/Backups/"

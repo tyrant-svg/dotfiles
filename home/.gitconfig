@@ -1,0 +1,33 @@
+[user]
+	name = tyrant-svg
+	email = tyrant-svg@users.noreply.github.com
+	signingkey = 0555D4EF899F796C
+[init]
+	defaultBranch = main
+[pull]
+	rebase = false
+[push]
+	default = simple
+[core]
+	editor = nano
+[fetch]
+	prune = true
+[diff]
+	colorMoved = zebra
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+	unstage = reset HEAD --
+	last = log -1 HEAD
+	visual = log --oneline --graph --decorate --all
+	amend = commit --amend --no-edit
+[commit]
+	gpgsign = true
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/bin/gh auth git-credential

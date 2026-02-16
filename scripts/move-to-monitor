@@ -1,0 +1,19 @@
+#!/bin/bash
+# Move window to specified monitor
+# Usage: move-to-monitor [left|center|right]
+
+WINDOW=$(xdotool getactivewindow)
+
+case "$1" in
+    left)
+        MON_X=0
+        ;;
+    center)
+        MON_X=1920
+        ;;
+    right)
+        MON_X=3840
+        ;;
+esac
+
+xdotool windowmove $WINDOW $MON_X 0

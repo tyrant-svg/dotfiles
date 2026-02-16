@@ -1,0 +1,279 @@
+#!/bin/bash
+# Scan physical notes and convert to Obsidian markdown with OCR
+# Usage: scan-to-obsidian [title] [course-code] [tags]
+
+set -euo pipefail
+
+# Configuration
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+INBOX_PATH="$VAULT_PATH/00 - Inbox"
+ASSETS_PATH="$VAULT_PATH/Assets"
+SCAN_TEMP="/tmp/obsidian-scan-$$"
+
+# Scanner settings (adjust for your scanner)
+SCANNER_DEVICE="${SCANNER_DEVICE:-$(scanimage -L | grep -oP "(?<=\`).*?(?=')" | head -1)}"
+DPI="${DPI:-300}"
+FORMAT="png"
+
+# Colors for output
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Functions
+print_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+print_error() { echo -e "${RED}[✗]${NC} $1"; }
+
+show_usage() {
+    cat << EOF
+Usage: scan-to-obsidian [OPTIONS]
+
+Scan physical notes and convert to Obsidian markdown with OCR.
+
+OPTIONS:
+    -t, --title TITLE       Note title (required)
+    -c, --course CODE       Course code (e.g., FOR3100, optional)
+    -g, --tags TAGS         Comma-separated tags (optional)
+    -d, --dpi DPI           Scan resolution (default: 300)
+    -p, --pages NUM         Number of pages to scan (default: 1)
+    -h, --help              Show this help message
+
+EXAMPLES:
+    scan-to-obsidian -t "Ecosystem Dynamics Lecture" -c FOR3100 -g "ecology,lecture"
+    scan-to-obsidian -t "Lab Notes" -p 3
+    scan-to-obsidian -t "Quick Notes"
+
+INTERACTIVE MODE:
+    If no options provided, script will prompt for information.
+
+EOF
+}
+
+# Parse arguments
+TITLE=""
+COURSE=""
+TAGS=""
+PAGES=1
+
+if [ $# -eq 0 ]; then
+    # Interactive mode
+    print_info "Interactive mode - Enter note information"
+    read -p "Note title: " TITLE
+    read -p "Course code (optional, press Enter to skip): " COURSE
+    read -p "Tags (comma-separated, optional): " TAGS
+    read -p "Number of pages to scan [1]: " PAGES
+    PAGES=${PAGES:-1}
+else
+    # Parse command-line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -t|--title)
+                TITLE="$2"
+                shift 2
+                ;;
+            -c|--course)
+                COURSE="$2"
+                shift 2
+                ;;
+            -g|--tags)
+                TAGS="$2"
+                shift 2
+                ;;
+            -d|--dpi)
+                DPI="$2"
+                shift 2
+                ;;
+            -p|--pages)
+                PAGES="$2"
+                shift 2
+                ;;
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
+fi
+
+# Validate required fields
+if [ -z "$TITLE" ]; then
+    print_error "Title is required"
+    show_usage
+    exit 1
+fi
+
+# Create temp directory
+mkdir -p "$SCAN_TEMP"
+
+# Check scanner
+if [ -z "$SCANNER_DEVICE" ]; then
+    print_error "No scanner found. Please connect a scanner."
+    exit 1
+fi
+
+print_info "Using scanner: $SCANNER_DEVICE"
+
+# Scan pages
+print_info "Scanning $PAGES page(s) at ${DPI} DPI..."
+SCANNED_FILES=()
+
+for i in $(seq 1 $PAGES); do
+    print_info "Scanning page $i/$PAGES (press Enter when ready)"
+    if [ "$PAGES" -gt 1 ]; then
+        read -p "Press Enter to scan page $i..."
+    fi
+
+    SCAN_FILE="$SCAN_TEMP/scan_page_${i}.${FORMAT}"
+
+    if scanimage --device "$SCANNER_DEVICE" \
+                 --format="$FORMAT" \
+                 --resolution "$DPI" \
+                 --mode Color \
+                 > "$SCAN_FILE" 2>/dev/null; then
+        print_success "Page $i scanned: $(basename "$SCAN_FILE")"
+        SCANNED_FILES+=("$SCAN_FILE")
+    else
+        print_error "Failed to scan page $i"
+        exit 1
+    fi
+done
+
+# Run OCR on all pages
+print_info "Running OCR (this may take a moment)..."
+OCR_TEXT=""
+
+for scan_file in "${SCANNED_FILES[@]}"; do
+    page_num=$((${#OCR_TEXT} == 0 ? 1 : $(echo "$OCR_TEXT" | grep -c "^## Page") + 1))
+
+    if [ ${#SCANNED_FILES[@]} -gt 1 ]; then
+        OCR_TEXT+="## Page $page_num\n\n"
+    fi
+
+    # Run tesseract OCR
+    if tesseract "$scan_file" stdout 2>/dev/null | grep -v "^$" >> "$SCAN_TEMP/ocr_text.txt"; then
+        print_success "OCR completed for page $page_num"
+    else
+        print_warning "OCR had issues with page $page_num (continuing anyway)"
+    fi
+done
+
+# Read OCR results
+if [ -f "$SCAN_TEMP/ocr_text.txt" ]; then
+    OCR_CONTENT=$(cat "$SCAN_TEMP/ocr_text.txt")
+else
+    OCR_CONTENT="[OCR failed - manual transcription needed]"
+fi
+
+# Prepare metadata
+DATE=$(date +'%Y-%m-%d')
+TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+SAFE_TITLE=$(echo "$TITLE" | sed 's/[^a-zA-Z0-9 ]//g' | sed 's/ /_/g')
+
+# Build tags array
+TAG_ARRAY="scanned-notes"
+if [ -n "$COURSE" ]; then
+    TAG_ARRAY="$TAG_ARRAY, $COURSE"
+fi
+if [ -n "$TAGS" ]; then
+    TAG_ARRAY="$TAG_ARRAY, $TAGS"
+fi
+
+# Move scanned images to Assets
+ASSET_FILES=()
+for i in "${!SCANNED_FILES[@]}"; do
+    page_num=$((i + 1))
+    asset_name="scan_${SAFE_TITLE}_${TIMESTAMP}_p${page_num}.${FORMAT}"
+    cp "${SCANNED_FILES[$i]}" "$ASSETS_PATH/$asset_name"
+    ASSET_FILES+=("$asset_name")
+    print_success "Saved: $asset_name"
+done
+
+# Create markdown note
+NOTE_FILE="$INBOX_PATH/${TITLE}.md"
+
+cat > "$NOTE_FILE" <<EOF
+---
+title: "$TITLE"
+date: $DATE
+tags: [$TAG_ARRAY]
+type: scanned-notes
+$([ -n "$COURSE" ] && echo "course: $COURSE")
+scanned: $TIMESTAMP
+pages: $PAGES
+---
+
+# $TITLE
+
+**Date:** $DATE
+$([ -n "$COURSE" ] && echo "**Course:** [[$COURSE]]")
+**Source:** Scanned handwritten notes
+**Pages:** $PAGES
+
+---
+
+## Scanned Images
+
+EOF
+
+# Add image embeds
+for asset in "${ASSET_FILES[@]}"; do
+    echo "![[${asset}]]" >> "$NOTE_FILE"
+    echo "" >> "$NOTE_FILE"
+done
+
+cat >> "$NOTE_FILE" <<EOF
+
+---
+
+## OCR Text (Raw)
+
+> [!note] OCR Extraction
+> Text below was automatically extracted. Review and correct as needed.
+
+$OCR_CONTENT
+
+---
+
+## Cleaned Notes
+
+<!-- Edit and organize the OCR text above into proper notes below -->
+
+
+
+---
+
+## Related Notes
+
+- [[00 - Inbox]]
+$([ -n "$COURSE" ] && echo "- [[$COURSE MOC]]")
+
+---
+
+*Scanned with scan-to-obsidian on $DATE*
+EOF
+
+print_success "Note created: $NOTE_FILE"
+
+# Cleanup temp files
+rm -rf "$SCAN_TEMP"
+
+# Open in Obsidian
+if command -v obsidian &>/dev/null; then
+    swaymsg 'workspace 1; exec obsidian' &>/dev/null || true
+fi
+
+# Notification
+if command -v notify-send &>/dev/null; then
+    notify-send "📝 Scan Complete" "Created: $TITLE\nPages: $PAGES"
+fi
+
+print_success "✨ Scan complete! Check your Obsidian Inbox."

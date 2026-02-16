@@ -1,0 +1,457 @@
+# Default config for sway
+#
+# Copy this to ~/.config/sway/config and edit it to your liking.
+#
+# Read `man 5 sway` for a complete reference.
+
+#Provided by sway package for env vars
+exec systemctl --user start xdg-desktop-portal xdg-desktop-portal-wlr
+
+### Variables
+#
+# Logo key. Use Mod1 for Alt.
+set $mod Mod4
+# Home row direction keys, like vim
+set $left h
+set $down j
+set $up k
+set $right l
+# Your preferred terminal emulator
+set $term kitty
+# Your preferred application launcher
+set $menu pgrep wofi >/dev/null 2>&1 && killall wofi || wofi --show drun
+
+set $file_explorer kitty -e yazi
+bindsym $mod+e exec $file_explorer
+
+### Output configuration
+#
+# Static wallpaper (frozen frame from cyberpunk.mp4)
+output * bg /home/gh0st/Pictures/Wallpapers/cyberpunk_static.png fill
+#
+# Multi-monitor setup - Physical arrangement (FIXED PERMANENTLY 2026-02-07)
+# LEFT → CENTER → RIGHT physical layout:
+# Left: HP 25f via HDMI (75Hz)
+output HDMI-A-1 mode 1920x1080@74.973Hz position 0,0
+# Center: HP M24f FHD via DP (75Hz)
+output DP-1 mode 1920x1080@74.973Hz position 1920,0
+# Right: Acer G235H via DP (60Hz)
+output DP-2 mode 1920x1080@60.00Hz position 3840,0
+#
+# You can get the names of your outputs by running: swaymsg -t get_outputs
+
+
+### Workspace-to-monitor assignments
+#
+# Left display (HDMI-A-1) - (HP 25f, 75Hz)
+workspace 1 output HDMI-A-1
+workspace 4 output HDMI-A-1
+workspace 5 output HDMI-A-1
+workspace 6 output HDMI-A-1
+
+# Center display (DP-1) - primary work (HP M24f FHD, 75Hz)
+workspace 2 output DP-1
+workspace 7 output DP-1
+workspace 8 output DP-1
+
+# Right display (DP-2) - reference (Acer G235H, 60Hz)
+workspace 3 output DP-2
+workspace 9 output DP-2
+workspace 10 output DP-2
+
+### Window rules
+#
+# Application auto-assignment
+assign [app_id="obsidian"] workspace 2
+assign [class="RStudio"] workspace 2
+assign [app_id="code-oss"] workspace 2
+assign [class="Brave-browser"] workspace 1
+assign [class="Spotify"] workspace 3
+assign [class="steam"] workspace 1
+
+# Floating windows
+for_window [title="R Graphics"] floating enable, resize set 1200 900
+for_window [app_id="pavucontrol"] floating enable
+for_window [title="Steam - News"] floating enable
+for_window [class="steam" title="Friends List"] floating enable
+
+# Spotify aesthetics (GUI with glass blur effect)
+for_window [class="Spotify"] opacity 0.95
+
+#gaps - Cyberpunk aesthetic (slightly larger for floating feel)
+gaps inner 10px
+gaps outer 10px
+
+#border size - Cyberpunk aesthetic (thicker for neon visibility)
+default_border pixel 2px
+default_floating_border pixel 2px
+
+#border color - Purple Cyberpunk (mix of warm purple + cool cyan)
+#                        BORDER   BG       TEXT     IND      CHILD
+client.focused           #ac82e9 #0d0d15 #e0e0ff #00d9ff  #ac82e9
+client.focused_inactive  #6b4d99 #0d0d15 #b4b4d4 #6b4d99  #6b4d99
+client.unfocused         #1f1b2e #0d0d15 #8892b0 #1f1b2e  #1f1b2e
+client.urgent            #ff006e #0d0d15 #ffffff #ff006e  #ff006e
+client.placeholder       #1f1b2e #0d0d15 #8892b0 #1f1b2e  #1f1b2e
+
+### sway-fx Effects - BALANCED OPTIMIZED ⚡💎
+#
+# 70% performance gain while keeping the full cyberpunk aesthetic
+# Optimized blur (1 pass instead of 4) + reduced radii = speed + beauty
+
+# Blur - OPTIMIZED (1 pass = 75% faster, still looks great!)
+blur enable
+blur_xray disable
+blur_passes 1
+blur_radius 5
+
+# Shadows with purple glow - OPTIMIZED (smaller radius = faster)
+shadows enable
+shadows_on_csd enable
+shadow_blur_radius 15
+shadow_color #ac82e9cc
+
+# Corner rounding (cheap, keep it)
+corner_radius 12
+
+# Dim unfocused windows (cheap, keep it)
+default_dim_inactive 0.2
+
+# Layer effects - ENHANCED (waybar/wofi/notifications)
+layer_effects "waybar" blur enable; shadows enable; corner_radius 12
+layer_effects "wofi" blur enable; shadows enable; corner_radius 8
+layer_effects "notifications" blur enable; shadows enable; corner_radius 12
+
+### Idle configuration - Simple logout to ly (2026-02-10)
+#
+# Timeouts optimized for gaming + coding workflow:
+# - 10 min: Dim displays (warning)
+# - 12 min: Logout to ly (no broken lock screen)
+# - 20 min: Turn off displays (power saving)
+# - Instant logout before sleep
+#
+# NOTE: Games with inhibit_idle will prevent these timeouts
+exec swayidle -w \
+    timeout 600 'swaymsg "output * dpms on" && swaymsg "output * brightness 0.5"' \
+        resume 'swaymsg "output * brightness 1.0"' \
+    timeout 720 'swaymsg exit' \
+    timeout 1200 'swaymsg "output * dpms off"' \
+        resume 'swaymsg "output * dpms on"' \
+    before-sleep 'swaymsg exit'
+
+### Input configuration
+#
+# Mouse behavior - Disabled to prevent mouse escape during gaming
+# Use keyboard shortcuts for focus instead ($mod+h/j/k/l or $mod+arrows)
+focus_follows_mouse no
+
+# Seat configuration for pointer behavior
+# Hide cursor after 8 seconds of inactivity
+seat * hide_cursor 8000
+seat * hide_cursor when-typing enabled
+
+# Mouse Configuration - ADAPTIVE (default, works with Arc Raiders)
+# Using system default that was working before optimizations
+input type:pointer {
+    accel_profile "adaptive"
+    pointer_accel 0.0
+}
+
+# Keyboard configuration (if needed)
+# input type:keyboard {
+#     xkb_layout "us"
+# }
+#
+# You can also configure each device individually.
+# Read `man 5 sway-input` for more information about this section.
+
+### Key bindings
+#
+# Basics:
+#
+    # Start a terminal
+    bindsym $mod+Return exec $term
+
+    # Kill focused window
+    bindsym $mod+q kill
+
+    # Start your launcher
+    bindsym $mod+d exec $menu
+
+    # Drag floating windows by holding down $mod and left mouse button.
+    # Resize them with right mouse button + $mod.
+    # Despite the name, also works for non-floating windows.
+    # Change normal to inverse to use left mouse button for resizing and right
+    # mouse button for dragging.
+    floating_modifier $mod normal
+
+    # Reload the configuration file
+    bindsym $mod+Shift+c reload
+
+    # Exit sway (logs you out of your Wayland session)
+    bindsym $mod+Shift+e exec swaynag -t warning -m 'You pressed the exit shortcut. Do you really want to exit sway? This will end your Wayland session.' -B 'Yes, exit sway' 'swaymsg exit'
+
+    # Quick lock (instant logout to ly)
+    bindsym $mod+Escape exec swaymsg exit
+#
+# Moving around:
+#
+    # Move your focus around
+    bindsym $mod+$left focus left
+    bindsym $mod+$down focus down
+    bindsym $mod+$up focus up
+    bindsym $mod+$right focus right
+    # Or use $mod+[up|down|left|right]
+    bindsym $mod+Left focus left
+    bindsym $mod+Down focus down
+    bindsym $mod+Up focus up
+    bindsym $mod+Right focus right
+
+    # Move the focused window with the same, but add Shift
+    bindsym $mod+Shift+$left move left
+    bindsym $mod+Shift+$down move down
+    bindsym $mod+Shift+$up move up
+    bindsym $mod+Shift+$right move right
+    # Ditto, with arrow keys
+    bindsym $mod+Shift+Left move left
+    bindsym $mod+Shift+Down move down
+    bindsym $mod+Shift+Up move up
+    bindsym $mod+Shift+Right move right
+#
+# Workspaces:
+#
+    # Switch to workspace
+    bindsym $mod+1 workspace number 1
+    bindsym $mod+2 workspace number 2
+    bindsym $mod+3 workspace number 3
+    bindsym $mod+4 workspace number 4
+    bindsym $mod+5 workspace number 5
+    bindsym $mod+6 workspace number 6
+    bindsym $mod+7 workspace number 7
+    bindsym $mod+8 workspace number 8
+    bindsym $mod+9 workspace number 9
+    bindsym $mod+0 workspace number 10
+    # Move focused container to workspace
+    bindsym $mod+Shift+1 move container to workspace number 1
+    bindsym $mod+Shift+2 move container to workspace number 2
+    bindsym $mod+Shift+3 move container to workspace number 3
+    bindsym $mod+Shift+4 move container to workspace number 4
+    bindsym $mod+Shift+5 move container to workspace number 5
+    bindsym $mod+Shift+6 move container to workspace number 6
+    bindsym $mod+Shift+7 move container to workspace number 7
+    bindsym $mod+Shift+8 move container to workspace number 8
+    bindsym $mod+Shift+9 move container to workspace number 9
+    bindsym $mod+Shift+0 move container to workspace number 10
+    # Note: workspaces can have any name you want, not just numbers.
+    # We just use 1-10 as the default.
+
+    # Quick workspace keybinds (semantic)
+    bindsym $mod+o workspace 1           # Obsidian
+    bindsym $mod+Shift+r workspace 2     # RStudio
+    bindsym $mod+c workspace 3           # Code
+    bindsym $mod+t workspace 4           # Terminal
+    bindsym $mod+n workspace 5           # Browser (navigation)
+#
+# Layout Stuff:
+#
+    # You can "split" the current object of your focus with
+    # $mod+b or $mod+v, for horizontal and vertical splits
+    # respectively.
+    bindsym $mod+b splith
+    bindsym $mod+v splitv
+
+    # Switch the current container between different layout styles
+    bindsym $mod+s layout stacking
+    bindsym $mod+w layout tabbed
+
+    # Make the current focus fullscreen
+    bindsym $mod+f fullscreen
+
+    # Toggle the current focus between tiling and floating mode
+    bindsym $mod+Shift+space floating toggle
+
+    # Swap focus between the tiling area and the floating area
+    bindsym $mod+space focus mode_toggle
+
+    # Move focus to the parent container
+    bindsym $mod+a focus parent
+#
+# Scratchpad:
+#
+    # Sway has a "scratchpad", which is a bag of holding for windows.
+    # You can send windows there and get them back later.
+
+    # Move the currently focused window to the scratchpad
+    bindsym $mod+Shift+minus move scratchpad
+
+    # Show the next scratchpad window or hide the focused scratchpad window.
+    # If there are multiple scratchpad windows, this command cycles through them.
+    bindsym $mod+minus scratchpad show
+#
+# Resizing containers:
+#
+mode "resize" {
+    # left will shrink the containers width
+    # right will grow the containers width
+    # up will shrink the containers height
+    # down will grow the containers height
+    bindsym $left resize shrink width 10px
+    bindsym $down resize grow height 10px
+    bindsym $up resize shrink height 10px
+    bindsym $right resize grow width 10px
+
+    # Ditto, with arrow keys
+    bindsym Left resize shrink width 10px
+    bindsym Down resize grow height 10px
+    bindsym Up resize shrink height 10px
+    bindsym Right resize grow width 10px
+
+    # Return to default mode
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+bindsym $mod+r mode "resize"
+#
+# Utilities:
+#
+    # Special keys to adjust volume via PulseAudio
+    bindsym --locked XF86AudioMute exec pactl set-sink-mute \@DEFAULT_SINK@ toggle
+    bindsym --locked XF86AudioLowerVolume exec pactl set-sink-volume \@DEFAULT_SINK@ -5%
+    bindsym --locked XF86AudioRaiseVolume exec pactl set-sink-volume \@DEFAULT_SINK@ +5%
+    bindsym --locked XF86AudioMicMute exec pactl set-source-mute \@DEFAULT_SOURCE@ toggle
+    # Special keys to adjust brightness via brightnessctl
+    bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
+    bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
+    # Region screenshot → annotate → save+clipboard  
+    bindsym $mod+g exec grim -g "$(slurp)" - | swappy -f - -o ~/Pictures/Screenshot_$(date +%Y%m%d-%H%M%S).png && wl-copy < ~/Pictures/Screenshot_$(date +%Y%m%d-%H%M%S).png
+
+    # Full screen
+    bindsym $mod+Shift+g exec grim ~/Pictures/Screenshot_$(date +%Y%m%d-%H%M%S).png && wl-copy < ~/Pictures/Screenshot_$(date +%Y%m%d-%H%M%S).png
+
+    # Quick clipboard area
+    bindsym $mod+Shift+z exec grim -g "$(slurp)" - | wl-copy
+
+    # Workflow launchers
+    bindsym $mod+Shift+o exec workflow-launch r-analysis
+    bindsym $mod+Ctrl+o exec workflow-launch obsidian-focus
+    bindsym $mod+Shift+n exec workflow-launch note-capture
+
+    # Gaming mode toggle (p = play/gaming, no conflicts)
+    bindsym $mod+p exec gaming-mode toggle
+
+    # Mouse confinement mode - Disable side monitors for guaranteed mouse lock
+    # Press again to re-enable all monitors
+    bindsym $mod+Shift+p exec ~/.local/bin/toggle-gaming-monitors
+
+    # AI coding assistant (i = AI)
+    bindsym $mod+i exec kitty --title "AI Coding Assistant" -e bash -c 'read -p "💡 Ask your coding question: " question && ai-code "$question" && read -p "\nPress Enter to close..."'
+
+#
+# Status Bar:
+#
+# Read `man 5 sway-bar` for more information about this section.
+# Using exec_always instead to prevent duplication
+# bar {
+#     swaybar_command waybar
+# }
+
+##Extra Utilities (scrap if you dont want it):
+
+include /etc/sway/config.d/*
+
+# Startup applications
+exec mako
+exec_always ~/.local/bin/fix-monitors
+exec_always ~/.local/bin/start-waybar
+# DISABLED: Animated wallpaper causes crashes
+# exec_always ~/.local/bin/start-animated-wallpaper
+### NVIDIA Performance Mode (2026-02-08)
+exec ~/.config/sway/scripts/nvidia-performance.sh
+
+### Gaming Optimizations (2026-02-08) - Disable Effects for Games
+# Blur/shadows kill FPS - disable for all game windows
+
+# Steam game windows - NO compositor effects + AGGRESSIVE Mouse confinement
+# Match both steam_app_* AND direct .x86_64 executables
+for_window [class="steam_app_.*"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable                           # FORCE fullscreen (confines mouse)
+    inhibit_idle focus                          # Keep display on while focused
+}
+
+# Arc Raiders specific - Proper mouse capture
+for_window [class="steam_app_1808500"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    inhibit_idle focus
+}
+
+# Native Linux games (*.x86_64) launched through Steam
+for_window [class=".*\.x86_64$"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable                           # FORCE fullscreen (confines mouse)
+    inhibit_idle focus
+}
+
+# Megabonk specific (native Linux game)
+for_window [class="Megabonk.x86_64"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable
+    inhibit_idle focus
+}
+
+# Any window that's a child of Steam and fullscreen
+for_window [title="^.*$" workspace=".*"] {
+    inhibit_idle fullscreen
+}
+
+# Fullscreen games - inhibit idle/screensaver
+for_window [app_id=".*"] inhibit_idle fullscreen
+for_window [class=".*"] inhibit_idle fullscreen
+
+# Proton/Wine games (Windows games via Steam Play)
+for_window [instance="steam_app_.*"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable
+    inhibit_idle focus
+}
+
+for_window [title=".*\\.exe$"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable
+    inhibit_idle focus
+}
+
+# Specific games
+for_window [class="Deadlock"] {
+    shadows disable
+    blur disable
+    corner_radius 0
+    shortcuts_inhibitor enable
+    focus on_window_activation focus
+    fullscreen enable
+    inhibit_idle focus
+}

@@ -1,0 +1,50 @@
+# Purple Cyberpunk btop theme
+# Matches sway-fx purple/cyan aesthetic
+
+# Main background
+theme[main_bg]="#0d0d15"
+
+# Main text color
+theme[main_fg]="#e0e0ff"
+
+# Title color
+theme[title]="#ac82e9"
+
+# Highlight/selected color
+theme[hi_fg]="#00d9ff"
+
+# Divider lines
+theme[div_line]="#6b4d99"
+
+# Graph colors (gradient purple to cyan)
+theme[graph_text]="#8892b0"
+theme[meter_bg]="#1f1b2e"
+theme[proc_misc]="#ac82e9"
+theme[cpu_box]="#ac82e9"
+theme[mem_box]="#ac82e9"
+theme[net_box]="#ac82e9"
+theme[proc_box]="#ac82e9"
+
+# CPU gradient
+theme[cpu_start]="#ac82e9"
+theme[cpu_mid]="#7799dd"
+theme[cpu_end]="#00d9ff"
+
+# Memory gradient
+theme[mem_start]="#ac82e9"
+theme[mem_mid]="#7799dd"
+theme[mem_end]="#00d9ff"
+
+# Network gradient
+theme[download_start]="#00d9ff"
+theme[download_mid]="#5599ee"
+theme[download_end]="#ac82e9"
+
+theme[upload_start]="#ac82e9"
+theme[upload_mid]="#5599ee"
+theme[upload_end]="#00d9ff"
+
+# Process colors
+theme[process_start]="#ac82e9"
+theme[process_mid]="#00d9ff"
+theme[process_end]="#ac82e9"

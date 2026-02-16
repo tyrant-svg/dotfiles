@@ -1,0 +1,71 @@
+#!/bin/bash
+# Sync Obsidian vault with git and create backup
+# Usage: sync-vault
+
+VAULT="$HOME/University of Idaho"
+
+if [ ! -d "$VAULT" ]; then
+    echo "Error: Vault not found at $VAULT"
+    exit 1
+fi
+
+cd "$VAULT" || exit
+
+echo "=== Syncing Obsidian Vault ==="
+
+# Check if git repo
+if [ ! -d ".git" ]; then
+    echo "Initializing git repository..."
+    git init
+
+    # Create .gitignore
+    cat > .gitignore <<EOF
+# Obsidian workspace
+.obsidian/workspace*
+.obsidian/cache
+
+# Trash
+.trash/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+EOF
+
+    git add .
+    git commit -m "Initial commit - Obsidian vault"
+    echo "Git repository initialized"
+fi
+
+# Check for changes
+if git diff-index --quiet HEAD --; then
+    echo "No changes to commit"
+else
+    echo "Changes detected, committing..."
+    git add .
+
+    # Get change summary
+    FILES_CHANGED=$(git diff --cached --name-only | wc -l)
+
+    git commit -m "Auto-sync $(date +'%Y-%m-%d %H:%M') - $FILES_CHANGED file(s) changed"
+    echo "Changes committed: $FILES_CHANGED file(s)"
+fi
+
+# Show recent commits
+echo ""
+echo "Recent commits:"
+git log --oneline --graph --decorate -5
+
+# Create backup
+echo ""
+echo "Creating backup..."
+backup-vault
+
+echo ""
+echo "=== Vault Synced ==="
+notify-send "Vault Synced" "Git commit and backup complete"

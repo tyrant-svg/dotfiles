@@ -1,0 +1,72 @@
+#!/bin/bash
+# Gaming mode toggle
+# Usage: gaming-mode <toggle|on|off>
+
+MODE="${1:-toggle}"
+STATE_FILE="/tmp/gaming-mode-state"
+WORKSPACE_FILE="/tmp/gaming-mode-prev-workspace"
+
+enable_gaming_mode() {
+    # Save current workspace
+    swaymsg -t get_workspaces | grep -oP '(?<="num":)\d+(?=,"visible":true)' | head -1 > "$WORKSPACE_FILE"
+
+    # Disable DP-2 and HDMI-A-1 (single display DP-1 center, 75Hz)
+    swaymsg "output DP-2 disable"
+    swaymsg "output HDMI-A-1 disable"
+
+    # Set mako to DND mode
+    makoctl mode -a gaming
+
+    # Switch to workspace 6 (gaming)
+    swaymsg "workspace 6"
+
+    # Mark as enabled
+    touch "$STATE_FILE"
+
+    notify-send -u low "🎮 Gaming Mode" "Single display (DP-1 center, 75Hz), notifications off"
+}
+
+disable_gaming_mode() {
+    # Re-enable all displays
+    swaymsg "output HDMI-A-1 enable"
+    swaymsg "output DP-2 enable"
+
+    # Restore notification mode
+    makoctl mode -r gaming
+
+    # Restore previous workspace if saved
+    if [ -f "$WORKSPACE_FILE" ]; then
+        PREV_WS=$(cat "$WORKSPACE_FILE")
+        swaymsg "workspace $PREV_WS"
+        rm "$WORKSPACE_FILE"
+    fi
+
+    # Remove state file
+    rm -f "$STATE_FILE"
+
+    notify-send "💼 Work Mode" "All displays restored"
+}
+
+case "$MODE" in
+    toggle)
+        if [ -f "$STATE_FILE" ]; then
+            disable_gaming_mode
+        else
+            enable_gaming_mode
+        fi
+        ;;
+    on)
+        if [ ! -f "$STATE_FILE" ]; then
+            enable_gaming_mode
+        fi
+        ;;
+    off)
+        if [ -f "$STATE_FILE" ]; then
+            disable_gaming_mode
+        fi
+        ;;
+    *)
+        echo "Usage: gaming-mode <toggle|on|off>"
+        exit 1
+        ;;
+esac

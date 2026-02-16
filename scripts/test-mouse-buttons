@@ -1,0 +1,36 @@
+#!/bin/bash
+# Interactive mouse button tester for ROG SPATHA X
+
+echo "════════════════════════════════════════════════"
+echo "  ROG SPATHA X Button Mapper"
+echo "════════════════════════════════════════════════"
+echo ""
+echo "Click each button on your mouse ONE AT A TIME"
+echo "I'll tell you which button NUMBER it is"
+echo ""
+echo "Testing for 30 seconds... (Ctrl+C to stop early)"
+echo ""
+echo "════════════════════════════════════════════════"
+
+/usr/sbin/xinput test 12 2>&1 | while read line; do
+    if [[ $line =~ button\ press\ \ \ ([0-9]+) ]]; then
+        BTN="${BASH_REMATCH[1]}"
+        case $BTN in
+            1) echo "🖱️  Button $BTN = LEFT CLICK (fire)" ;;
+            2) echo "🖱️  Button $BTN = MIDDLE CLICK (scroll wheel)" ;;
+            3) echo "🖱️  Button $BTN = RIGHT CLICK (aim)" ;;
+            4) echo "🔄  Button $BTN = SCROLL UP" ;;
+            5) echo "🔄  Button $BTN = SCROLL DOWN" ;;
+            6) echo "⬅️  Button $BTN = SIDE BUTTON (probably back)" ;;
+            7) echo "➡️  Button $BTN = SIDE BUTTON (probably forward)" ;;
+            8) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            9) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            10) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            11) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            12) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            13) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            14) echo "🎮  Button $BTN = EXTRA BUTTON (programmable)" ;;
+            *) echo "🔍  Button $BTN = Unknown button" ;;
+        esac
+    fi
+done

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Cycle through windows on current workspace
+
+DIRECTION=$1  # next or prev
+
+# Get list of window IDs on current desktop
+WINDOWS=$(xdotool search --desktop $(xdotool get_desktop) --name "")
+CURRENT=$(xdotool getactivewindow)
+
+# Convert to array
+WINDOW_ARRAY=($WINDOWS)
+CURRENT_INDEX=-1
+
+# Find current window index
+for i in "${!WINDOW_ARRAY[@]}"; do
+    if [[ "${WINDOW_ARRAY[$i]}" == "$CURRENT" ]]; then
+        CURRENT_INDEX=$i
+        break
+    fi
+done
+
+# Calculate next window
+if [ "$DIRECTION" == "next" ]; then
+    NEXT_INDEX=$(( (CURRENT_INDEX + 1) % ${#WINDOW_ARRAY[@]} ))
+else
+    NEXT_INDEX=$(( (CURRENT_INDEX - 1 + ${#WINDOW_ARRAY[@]}) % ${#WINDOW_ARRAY[@]} ))
+fi
+
+# Focus next window
+xdotool windowactivate ${WINDOW_ARRAY[$NEXT_INDEX]} 2>/dev/null

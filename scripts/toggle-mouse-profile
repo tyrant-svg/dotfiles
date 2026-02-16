@@ -1,0 +1,26 @@
+#!/bin/bash
+# Toggle between gaming and desktop mouse profiles for ROG SPATHA X
+
+MOUSE_NAME="ASUSTeK ROG SPATHA X"
+
+# Get current profile
+CURRENT_PROFILE=$(ratbagctl "$MOUSE_NAME" info 2>/dev/null | grep "Profile.*active" | grep -oP 'Profile \K\d+')
+
+if [ -z "$CURRENT_PROFILE" ]; then
+    echo "Error: Could not detect mouse. Is ratbagd running?"
+    notify-send "Mouse Profile" "Error: Could not detect ROG SPATHA X" -u critical
+    exit 1
+fi
+
+# Toggle profile
+if [ "$CURRENT_PROFILE" -eq 0 ]; then
+    # Switch to Profile 1 (Desktop - GREEN LED)
+    ratbagctl "$MOUSE_NAME" profile active set 1
+    notify-send "🖱️ Desktop Mode" "Mouse profile switched\nLED: GREEN" -t 2000 -i input-mouse
+    echo "Switched to Desktop Mode (Profile 1 - GREEN LED)"
+else
+    # Switch to Profile 0 (Gaming - RED LED)
+    ratbagctl "$MOUSE_NAME" profile active set 0
+    notify-send "🎮 Gaming Mode" "Mouse profile switched\nLED: RED" -t 2000 -i input-gaming
+    echo "Switched to Gaming Mode (Profile 0 - RED LED)"
+fi

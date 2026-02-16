@@ -1,0 +1,97 @@
+{
+  "layer": "bot",
+  "spacing": 4,
+  "height": 0,
+  "margin-bottom": 0,
+  "margin-top": 15,
+  "position": "top",
+  "margin-right": 500,
+  "margin-left": 500,
+  "modules-left": [
+    "hyprland/workspaces",
+    "sway/workspaces"
+  ],
+  "modules-center": [
+    "custom/applauncher"
+  ],
+  "modules-right": [
+    "custom/mode-indicator",
+    "cpu",
+    "memory",
+    "network",
+    "battery",
+    "pulseaudio",
+    "tray",
+    "clock"
+  ],
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": false,
+    "tooltip": false
+  },
+  "sway/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": false,
+    "tooltip": false
+  },
+  "custom/applauncher": {
+    "format": "〇",
+    "on-click": "pgrep wofi >/dev/null 2>&1 && killall wofi || wofi --show drun --location=top -y 15",
+    "tooltip": false
+  },
+  "tray": {
+    "spacing": 10,
+    "tooltip": false
+  },
+  "clock": {
+    "format": "  {:%a %b %d  %H:%M}  ",
+    "format-alt": "  {:%Y-%m-%d  %H:%M:%S}  ",
+    "tooltip": false
+  },
+  "network": {
+    "format-wifi": "  WiFi {bandwidthDownBytes}  │",
+    "format-ethernet": "  Net {bandwidthDownBytes}  │",
+    "format-disconnected": "  Disconnected  │",
+    "interval": 2,
+    "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
+    "tooltip": true
+  },
+  "pulseaudio": {
+    "scroll-step": 5,
+    "max-volume": 150,
+    "format": "  Vol {volume}%  │",
+    "format-bluetooth": "  BT {volume}%  │",
+    "format-muted": "  Muted  │",
+    "on-click": "pavucontrol",
+    "tooltip-format": "{desc}: {volume}%",
+    "tooltip": true
+  },
+  "battery": {
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰂄{capacity}%",
+    "format-alt": "{icon} {time}",
+    "format-full": "󱈑 {capacity}%",
+    "format-icons": [
+      "󱊡",
+      "󱊢",
+      "󱊣"
+    ],
+    "tooltip": false
+  },
+  "custom/mode-indicator": {
+    "exec": "[ -f /tmp/gaming-mode-state ] && echo '  🎮  │' || echo '  💼  │'",
+    "interval": 2,
+    "tooltip": false
+  },
+  "cpu": {
+    "format": "  CPU {usage}%  │",
+    "interval": 2,
+    "tooltip": false
+  },
+  "memory": {
+    "format": "  Mem {percentage}%  │",
+    "interval": 5,
+    "tooltip": false
+  }
+}

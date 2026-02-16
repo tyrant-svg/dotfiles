@@ -1,0 +1,30 @@
+#!/bin/bash
+# Move window one monitor to the left (full size on new monitor)
+# Works with both xdotool and wmctrl (for Electron apps)
+
+WINDOW=$(xdotool getactivewindow)
+eval $(xdotool getwindowgeometry --shell $WINDOW)
+
+# Determine current monitor and move left
+if [ $X -lt 1920 ]; then
+    # On left monitor - can't go further left
+    exit 0
+elif [ $X -lt 3840 ]; then
+    # On center monitor - move to left
+    NEW_X=0
+else
+    # On right monitor - move to center
+    NEW_X=1920
+fi
+
+# Try xdotool first, fallback to wmctrl if it fails
+xdotool windowsize $WINDOW 1920 1080 2>/dev/null
+xdotool windowmove $WINDOW $NEW_X 0 2>/dev/null
+
+# If xdotool failed (position didn't change), use wmctrl
+sleep 0.1
+eval $(xdotool getwindowgeometry --shell $WINDOW)
+if [ $X -ne $NEW_X ]; then
+    # xdotool failed, use wmctrl
+    wmctrl -r :ACTIVE: -e 0,$NEW_X,0,1920,1080
+fi

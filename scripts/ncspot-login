@@ -1,0 +1,14 @@
+#!/bin/bash
+# ncspot first-time setup helper
+
+echo "🎵 Starting ncspot login process..."
+echo ""
+echo "ncspot will show you an authorization URL."
+echo "Your browser should open automatically."
+echo "Just click 'Agree' and you're done!"
+echo ""
+echo "Press Enter to continue..."
+read
+
+# Start ncspot - it will handle the browser opening
+ncspot

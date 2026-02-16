@@ -1,0 +1,30 @@
+#!/bin/bash
+# Toggle side monitors for guaranteed mouse confinement during gaming
+# Keeps only center monitor (DP-1) active
+# 100% effective mouse lock - physically removes other screens
+
+STATE_FILE="/tmp/gaming-monitors-disabled"
+
+if [[ -f "$STATE_FILE" ]]; then
+    # Re-enable all monitors
+    echo "Re-enabling all monitors..."
+    swaymsg output HDMI-A-1 enable
+    swaymsg output DP-2 enable
+
+    # Restore monitor positions
+    swaymsg output HDMI-A-1 position 0,0
+    swaymsg output DP-1 position 1920,0
+    swaymsg output DP-2 position 3840,0
+
+    rm "$STATE_FILE"
+    notify-send -u normal "🖥️ Gaming Mode OFF" "All 3 monitors enabled\nMouse can move freely"
+    echo "✓ All monitors enabled"
+else
+    # Disable side monitors, keep center only
+    echo "Enabling gaming mode..."
+    swaymsg output HDMI-A-1 disable
+    swaymsg output DP-2 disable
+    touch "$STATE_FILE"
+    notify-send -u critical "🎮 Gaming Mode ON" "ONLY center monitor active\n🔒 Mouse LOCKED to DP-1\n\nPress $mod+Shift+p to restore monitors"
+    echo "✓ Gaming mode active - center monitor only"
+fi

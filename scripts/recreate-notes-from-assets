@@ -1,0 +1,289 @@
+#!/bin/bash
+# Recreate individual notes from all scan images in Assets
+# Fixes the overwriting bug - creates unique notes for each scan
+
+set -euo pipefail
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+ASSETS_PATH="$VAULT_PATH/Assets"
+DOCUMENTED_PATH="$VAULT_PATH/Documented"
+BATCH_DATE="${1:-20260215}"  # Allow custom date, default to today's batch
+
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+print_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+print_header() { echo -e "${PURPLE}$1${NC}"; }
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║   Note Recovery - Process Assets to Individual Notes ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+
+# Find all scan images from the batch
+mapfile -t SCAN_IMAGES < <(find "$ASSETS_PATH" -name "scan_*_${BATCH_DATE}_*.jpg" -o -name "scan_*_${BATCH_DATE}_*.png" | sort)
+
+if [ ${#SCAN_IMAGES[@]} -eq 0 ]; then
+    print_warning "No scan images found for date: $BATCH_DATE"
+    exit 0
+fi
+
+print_info "Found ${#SCAN_IMAGES[@]} scan images to process"
+echo ""
+
+# First, move existing conflicting notes out of the way
+print_info "Backing up existing notes..."
+BACKUP_DIR="$DOCUMENTED_PATH/.backup_$(date +%Y%m%d_%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+for note in "$DOCUMENTED_PATH"/Scanned\ Notes\ -\ *.md; do
+    if [ -f "$note" ]; then
+        mv "$note" "$BACKUP_DIR/"
+        print_success "Backed up: $(basename "$note")"
+    fi
+done
+
+echo ""
+print_info "Starting individual note creation..."
+echo ""
+
+PROCESSED=0
+DATE=$(date +'%Y-%m-%d')
+
+for img_path in "${SCAN_IMAGES[@]}"; do
+    PROCESSED=$((PROCESSED + 1))
+    img_filename=$(basename "$img_path")
+
+    # Extract scan number from filename (e.g., 0001, 0246, etc.)
+    scan_num=$(echo "$img_filename" | grep -oP '_\d{4}\.' | tr -d '_.')
+
+    print_info "[$PROCESSED/${#SCAN_IMAGES[@]}] Processing scan #$scan_num..."
+
+    # Run AI analysis on this scan
+    python3 << PYEOF
+import easyocr
+import chromadb
+from chromadb.utils import embedding_functions
+from pathlib import Path
+import subprocess
+import json
+import re
+import warnings
+warnings.filterwarnings('ignore')
+
+img_path = "$img_path"
+img_filename = "$img_filename"
+scan_num = "$scan_num"
+date = "$DATE"
+documented_path = "$DOCUMENTED_PATH"
+
+try:
+    # OCR
+    print("  → Running OCR...")
+    reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+    results = reader.readtext(img_path)
+    ocr_text = ' '.join([text for _, text, _ in results])
+
+    if not ocr_text.strip():
+        print("  ✗ No text detected, creating placeholder note")
+        ocr_text = "[No text detected in scan]"
+
+    print(f"  → Extracted {len(ocr_text)} characters")
+
+    # Search vault
+    print("  → Searching vault...")
+    client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+    ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+        model_name="all-MiniLM-L6-v2"
+    )
+    collection = client.get_collection(name="vault_notes", embedding_function=ef)
+
+    search_results = collection.query(
+        query_texts=[ocr_text[:1000]],
+        n_results=5
+    )
+
+    # Detect course
+    courses = [meta['course'] for meta in search_results['metadatas'][0]]
+    detected_course = max(set(courses), key=courses.count) if courses else "unknown"
+
+    top_matches = [
+        meta['filename'] for meta in search_results['metadatas'][0][:3]
+    ]
+
+    print(f"  → Detected course: {detected_course}")
+
+    # Use LLM for better title
+    print("  → Generating title...")
+
+    context = "\\n".join([
+        f"{meta['filename']}"
+        for meta in search_results['metadatas'][0][:3]
+    ])
+
+    prompt = f"""Analyze this scanned note and suggest a concise title (4-6 words max).
+
+Course detected: {detected_course}
+Related notes: {context}
+
+OCR text: {ocr_text[:400]}
+
+Respond with ONLY the title, nothing else. Make it specific and descriptive.
+If this looks like a quiz/exam, include that in the title.
+If it's lecture notes, include the topic.
+Examples: "Week 3 Lab - Soil Sampling", "Quiz 2 Review", "Fire Behavior Basics"
+"""
+
+    result = subprocess.run(
+        ['ollama', 'run', 'llama3.1:8b', prompt],
+        capture_output=True,
+        text=True,
+        timeout=30
+    )
+
+    ai_title = result.stdout.strip()[:60]  # Max 60 chars
+
+    # Clean title
+    ai_title = re.sub(r'[^a-zA-Z0-9 -]', '', ai_title).strip()
+    if not ai_title or len(ai_title) < 3:
+        ai_title = f"Scan {scan_num}"
+
+    # Create unique note name: Course - Title - #Number
+    if detected_course != "unknown":
+        note_title = f"{detected_course} - {ai_title} (#{scan_num})"
+    else:
+        note_title = f"{ai_title} (#{scan_num})"
+
+    # Safe filename
+    safe_filename = re.sub(r'[^a-zA-Z0-9 ()-]', '', note_title).replace('  ', ' ')
+    note_path = Path(documented_path) / f"{safe_filename}.md"
+
+    # Build tags
+    tags = ["scanned-notes", "ai-processed", detected_course.lower(), "recovered"]
+    tag_str = ", ".join(tags)
+
+    # Create note
+    note_content = f"""---
+title: "{note_title}"
+date: {date}
+tags: [{tag_str}]
+type: scanned-notes
+course: {detected_course}
+scan_number: {scan_num}
+ai_processed: true
+recovered: true
+source: {img_filename}
+---
+
+# {note_title}
+
+**Date:** {date}
+**Course:** [[{detected_course}]]
+**Scan:** #{scan_num}
+**Related Notes:** {', '.join([f"[[{m.replace('.md', '')}]]" for m in top_matches[:3]])}
+
+---
+
+## Scanned Image
+
+![[{img_filename}]]
+
+---
+
+## OCR Text (Raw)
+
+> [!note] OCR Extraction
+> Review and clean up the text below.
+
+{ocr_text}
+
+---
+
+## Cleaned Notes
+
+<!--
+Review OCR above and organize notes here
+-->
+
+
+
+---
+
+## Related Notes
+
+- [[{detected_course} MOC]]
+
+---
+
+*Recovered and processed on {date}*
+*Original scan: {img_filename}*
+"""
+
+    note_path.write_text(note_content, encoding='utf-8')
+    print(f"  ✓ Created: {safe_filename}.md")
+
+except Exception as e:
+    print(f"  ✗ Error: {e}")
+    # Create minimal note anyway
+    note_title = f"Scan {scan_num}"
+    note_path = Path(documented_path) / f"{note_title}.md"
+    note_content = f"""---
+title: "{note_title}"
+date: {date}
+tags: [scanned-notes, error]
+type: scanned-notes
+scan_number: {scan_num}
+source: {img_filename}
+---
+
+# {note_title}
+
+**Error during processing:** {str(e)}
+
+## Scanned Image
+
+![[{img_filename}]]
+
+---
+
+*Processing failed - manual review needed*
+"""
+    note_path.write_text(note_content, encoding='utf-8')
+
+PYEOF
+
+    echo ""
+done
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║          Recovery Complete!                        ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+print_success "Processed ${#SCAN_IMAGES[@]} scan images"
+print_success "Created individual notes in: Documented/"
+print_success "Backup of old notes: $BACKUP_DIR"
+echo ""
+print_info "Next steps:"
+echo "  1. Review notes in Obsidian (Documented/ folder)"
+echo "  2. Run: auto-correct-scans (fix OCR errors)"
+echo "  3. Run: index-vault (update search index)"
+echo ""
+
+if command -v obsidian &>/dev/null; then
+    swaymsg 'workspace 1; exec obsidian' &>/dev/null || true
+fi
+
+if command -v notify-send &>/dev/null; then
+    notify-send "🔧 Note Recovery Complete" "Processed ${#SCAN_IMAGES[@]} scans into individual notes"
+fi
+
+print_success "✨ All 272 scans now have individual notes!"

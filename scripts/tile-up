@@ -1,0 +1,26 @@
+#!/bin/bash
+# Tile window to top half of current monitor
+
+WINDOW=$(xdotool getactivewindow)
+eval $(xdotool getwindowgeometry --shell $WINDOW)
+
+# Determine which monitor based on window X position
+if [ $X -lt 1920 ]; then
+    # Left monitor (HDMI-0)
+    MON_X=0
+    MON_WIDTH=1920
+elif [ $X -lt 3840 ]; then
+    # Center monitor (DP-1)
+    MON_X=1920
+    MON_WIDTH=1920
+else
+    # Right monitor (DP-2)
+    MON_X=3840
+    MON_WIDTH=1920
+fi
+
+MON_HEIGHT=1080
+TILE_HEIGHT=$((MON_HEIGHT / 2))
+
+xdotool windowsize $WINDOW $MON_WIDTH $TILE_HEIGHT
+xdotool windowmove $WINDOW $MON_X 0

@@ -1,0 +1,48 @@
+#!/bin/bash
+# Plasma keybind migration from Sway
+# Run this to set up all custom shortcuts
+
+echo "Setting up Plasma keybinds..."
+
+# Terminal (Meta+Return)
+kwriteconfig6 --file kglobalshortcutsrc --group "org.kde.konsole.desktop" --key "_launch" "none,none,Konsole"
+kwriteconfig6 --file kglobalshortcutsrc --group "kitty.desktop" --key "_launch" "Meta+Return,none,Kitty"
+
+# File Explorer (Meta+E)
+kwriteconfig6 --file kglobalshortcutsrc --group "kitty-yazi.desktop" --key "_launch" "Meta+E,none,Yazi File Manager"
+
+# Close Window (Meta+Q)
+kwriteconfig6 --file kglobalshortcutsrc --group kwin --key "Window Close" "Meta+Q\tAlt+F4,Alt+F4,Close Window"
+
+# KRunner/Menu (Meta+D already default)
+# Workspaces 1-4 (Meta+1-4 already work)
+
+# Polonium tiling navigation (Meta+H/J/K/L)
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Focus Left" "Meta+H,Meta+Alt+Left,Focus Window to the Left"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Focus Down" "Meta+J,Meta+Alt+Down,Focus Window Below"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Focus Up" "Meta+K,Meta+Alt+Up,Focus Window Above"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Focus Right" "Meta+L,Meta+Alt+Right,Focus Window to the Right"
+
+# Polonium move windows (Meta+Shift+H/J/K/L)
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Move Left" "Meta+Shift+H,none,Move Window Left"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Move Down" "Meta+Shift+J,none,Move Window Down"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Move Up" "Meta+Shift+K,none,Move Window Up"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Window Move Right" "Meta+Shift+L,none,Move Window Right"
+
+# Quick workspace jumps
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Switch to Desktop 1" "Meta+O\tMeta+1\tCtrl+F1,Ctrl+F1,Switch to Desktop 1"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Switch to Desktop 2" "Meta+Shift+R\tMeta+2\tCtrl+F2,Ctrl+F2,Switch to Desktop 2"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Switch to Desktop 3" "Meta+C\tMeta+3\tCtrl+F3,Ctrl+F3,Switch to Desktop 3"
+kwriteconfig6 --file kglobalshortcutsrc --group "kwin" --key "Switch to Desktop 4" "Meta+T\tMeta+4\tCtrl+F4,Ctrl+F4,Switch to Desktop 4"
+
+# Reload KWin
+echo "Reloading KWin configuration..."
+qdbus6 org.kde.KWin /KWin reconfigure
+
+echo "✅ Keybinds configured!"
+echo "Test with:"
+echo "  Meta+Return  → Kitty terminal"
+echo "  Meta+E       → Yazi file manager"
+echo "  Meta+Q       → Close window"
+echo "  Meta+H/J/K/L → Navigate windows"
+echo "  Meta+1-4     → Switch desktops"

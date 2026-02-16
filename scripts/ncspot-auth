@@ -1,0 +1,31 @@
+#!/bin/bash
+# Manual ncspot auth helper
+
+# Start ncspot in background and capture output
+ncspot 2>&1 | tee /tmp/ncspot-auth.log &
+NCSPOT_PID=$!
+
+echo "⏳ Waiting for authorization URL..."
+sleep 3
+
+# Extract and open the URL
+AUTH_URL=$(grep "Browse to:" /tmp/ncspot-auth.log | sed 's/.*Browse to: //')
+
+if [[ -n "$AUTH_URL" ]]; then
+    echo "🌐 Opening browser..."
+    xdg-open "$AUTH_URL" 2>/dev/null || {
+        echo ""
+        echo "📋 Copy this URL to your browser:"
+        echo "$AUTH_URL"
+    }
+    
+    echo ""
+    echo "✅ After authorizing in browser, ncspot will start automatically!"
+    echo "⌨️  Press Ctrl+C to cancel if needed"
+    
+    # Bring ncspot to foreground
+    fg
+else
+    echo "❌ Couldn't find auth URL. Try running 'ncspot' directly."
+    kill $NCSPOT_PID 2>/dev/null
+fi

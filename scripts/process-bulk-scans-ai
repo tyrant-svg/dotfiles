@@ -1,0 +1,328 @@
+#!/bin/bash
+# AI-enhanced bulk scan processor with course detection and auto-sorting
+
+set -euo pipefail
+
+# Auto-activate venv
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+# Configuration
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+BULK_SCANS_PATH="$VAULT_PATH/00 - Inbox/Bulk Scans"
+DOCUMENTED_PATH="$VAULT_PATH/Documented"
+ASSETS_PATH="$VAULT_PATH/Assets"
+
+# Colors
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+print_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+print_header() { echo -e "${PURPLE}$1${NC}"; }
+
+# Create folders
+mkdir -p "$BULK_SCANS_PATH" "$DOCUMENTED_PATH"
+
+# Find images
+mapfile -t IMAGE_FILES < <(find "$BULK_SCANS_PATH" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) 2>/dev/null)
+
+if [ ${#IMAGE_FILES[@]} -eq 0 ]; then
+    print_info "No scans found in Bulk Scans folder"
+    exit 0
+fi
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║   AI-Enhanced Bulk Scan Processor                 ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+print_info "Found ${#IMAGE_FILES[@]} scan(s) to process with AI"
+echo ""
+
+DATE=$(date +'%Y-%m-%d')
+BATCH_TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+PROCESSED=0
+
+for img_file in "${IMAGE_FILES[@]}"; do
+    PROCESSED=$((PROCESSED + 1))
+    filename=$(basename "$img_file")
+
+    print_info "[$PROCESSED/${#IMAGE_FILES[@]}] Processing: $filename"
+
+    # Run AI analysis
+    python3 << PYEOF
+import easyocr
+import chromadb
+from chromadb.utils import embedding_functions
+from pathlib import Path
+import subprocess
+import json
+import re
+
+# Suppress warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+img_path = "$img_file"
+filename = "$filename"
+batch_ts = "$BATCH_TIMESTAMP"
+date = "$DATE"
+assets_path = "$ASSETS_PATH"
+documented_path = "$DOCUMENTED_PATH"
+
+print("  → Running OCR...")
+
+# OCR
+reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+results = reader.readtext(img_path)
+ocr_text = ' '.join([text for _, text, _ in results])
+
+if not ocr_text.strip():
+    print("  ✗ No text detected, skipping")
+    exit(0)
+
+print(f"  → Extracted {len(ocr_text)} characters")
+
+# Search vault
+print("  → Searching vault...")
+
+client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+
+collection = client.get_collection(name="vault_notes", embedding_function=ef)
+
+search_results = collection.query(
+    query_texts=[ocr_text[:1000]],
+    n_results=5
+)
+
+# Detect course
+courses = [meta['course'] for meta in search_results['metadatas'][0]]
+detected_course = max(set(courses), key=courses.count) if courses else "unknown"
+
+top_matches = [
+    f"{meta['filename']} ({(1-dist)*100:.0f}%)"
+    for meta, dist in zip(search_results['metadatas'][0][:3], search_results['distances'][0][:3])
+]
+
+print(f"  → Detected course: {detected_course}")
+print(f"  → Top matches: {', '.join(top_matches[:2])}")
+
+# Check if this is mixed-class notes (multiple distinct topics)
+print("  → Analyzing content structure...")
+
+# Build context
+context = "\\n".join([
+    f"{meta['filename']} (Course: {meta['course']})"
+    for meta in search_results['metadatas'][0][:3]
+])
+
+prompt = f"""Analyze this scanned note. Determine:
+1. Is this ONE topic or MULTIPLE distinct topics?
+2. What course(s): FOR3100, ENT4690, FIR3326, ECON2202, BIO114, FOR4400, FOR4500, FOR4600
+3. Suggest a title (5-8 words max)
+4. List 3-5 key concepts
+
+Related vault notes: {context}
+
+OCR text: {ocr_text[:600]}
+
+Respond in this format:
+TOPICS: <"single" or "multiple">
+COURSE: <course code>
+TITLE: <suggested title>
+CONCEPTS: <concept1>, <concept2>, <concept3>
+"""
+
+result = subprocess.run(
+    ['ollama', 'run', 'llama3.1:8b', prompt],
+    capture_output=True,
+    text=True,
+    timeout=45
+)
+
+ai_response = result.stdout.strip()
+
+# Parse response
+topics = "single"
+title = f"Scanned Notes - {detected_course}"
+concepts = []
+
+for line in ai_response.split('\\n'):
+    if line.startswith('TOPICS:'):
+        topics = 'multiple' if 'multiple' in line.lower() else 'single'
+    elif line.startswith('COURSE:'):
+        match = re.search(r'[A-Z]{3,4}\\d{4}', line)
+        if match:
+            detected_course = match.group()
+    elif line.startswith('TITLE:'):
+        title = line.split(':', 1)[1].strip()
+    elif line.startswith('CONCEPTS:'):
+        concepts = [c.strip() for c in line.split(':', 1)[1].split(',')]
+
+# Generate safe filename
+safe_title = re.sub(r'[^a-zA-Z0-9 ]', '', title).replace(' ', '_')
+note_num = str($PROCESSED).zfill(4)
+
+# Copy to assets
+ext = img_path.split('.')[-1]
+asset_name = f"scan_{safe_title}_{batch_ts}_{note_num}.{ext}"
+asset_path = Path(assets_path) / asset_name
+
+import shutil
+shutil.copy2(img_path, asset_path)
+
+# Create note
+note_path = Path(documented_path) / f"{title}.md"
+
+# Build tags
+tags = ["scanned-notes", "ai-processed", detected_course.lower()]
+if topics == "multiple":
+    tags.append("mixed-topics")
+
+tag_str = ", ".join(tags)
+
+# Check for potential errors based on vault knowledge
+corrections = []
+if detected_course != "unknown":
+    # Simple heuristic: if OCR has common mistakes
+    common_errors = {
+        "PIPO": ["Ponderosa Pine", "Pinus ponderosa"],
+        "PSME": ["Douglas Fir", "Pseudotsuga menziesii"],
+        "ABLA": ["Subalpine Fir", "Abies lasiocarpa"],
+        "DBH": ["Diameter at Breast Height"],
+        "FVS": ["Forest Vegetation Simulator"]
+    }
+
+    for abbrev, expansions in common_errors.items():
+        if abbrev in ocr_text.upper():
+            corrections.append(f"Check {abbrev} = {expansions[0]}")
+
+note_content = f"""---
+title: "{title}"
+date: {date}
+tags: [{tag_str}]
+type: scanned-notes
+course: {detected_course}
+ai_processed: true
+confidence: {"low" if topics == "multiple" else "medium"}
+scan_timestamp: {batch_ts}
+source: {filename}
+---
+
+# {title}
+
+**Date:** {date}
+**Course:** [[{detected_course}]]
+**AI Confidence:** {"⚠️ Mixed topics detected" if topics == "multiple" else "✓ Single topic"}
+**Related Notes:** {', '.join([f"[[{m['filename'].replace('.md', '')}]]" for m in search_results['metadatas'][0][:3]])}
+
+---
+
+## Scanned Image
+
+![[{asset_name}]]
+
+---
+
+## AI Analysis
+
+**Key Concepts:**
+{''.join([f'- {c}\\n' for c in concepts[:5]])}
+
+{"**Potential Corrections:**\\n" + ''.join([f"- {c}\\n" for c in corrections]) if corrections else ""}
+
+---
+
+## OCR Text (Raw)
+
+> [!note] OCR Extraction
+> Review and clean up the text below. AI detected this as {"MULTIPLE distinct topics - consider splitting" if topics == "multiple" else "a single topic"}.
+
+{ocr_text}
+
+---
+
+## Cleaned Notes
+
+<!--
+AI suggestions:
+- Course: {detected_course}
+- Title: {title}
+{"- WARNING: Multiple topics detected - consider creating separate notes" if topics == "multiple" else ""}
+
+Review OCR, fix errors, organize content below:
+-->
+
+
+
+---
+
+## Tasks
+
+- [ ] Review OCR accuracy
+- [ ] {"Split into separate notes for each topic" if topics == "multiple" else "Verify course classification"}
+- [ ] Add wikilinks to related concepts
+- [ ] Move to course folder when ready
+
+---
+
+## Related Notes
+
+- [[{detected_course} MOC]]
+{chr(10).join([f"- [[{m['filename'].replace('.md', '')}]]" for m in search_results['metadatas'][0][:3]])}
+
+---
+
+*AI-processed with process-bulk-scans-ai on {date}*
+*Vault search: {', '.join(top_matches[:2])}*
+"""
+
+note_path.write_text(note_content, encoding='utf-8')
+
+print(f"  ✓ Note created: {title}")
+print(f"  ✓ Asset saved: {asset_name}")
+
+# Output for bash script
+print(f"NOTE_CREATED:{note_path}")
+print(f"COURSE_DETECTED:{detected_course}")
+print(f"TOPICS:{topics}")
+
+PYEOF
+
+    # Remove original
+    rm "$img_file"
+    print_info "  → Removed from Bulk Scans"
+    echo ""
+done
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║         AI Processing Complete!                    ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+print_success "Processed $PROCESSED scan(s) with AI analysis"
+print_success "Notes created in: Documented/"
+echo ""
+print_info "Next Steps:"
+echo "  1. Review AI-generated notes in Obsidian"
+echo "  2. Fix OCR errors and add details"
+echo "  3. Split mixed-topic notes if needed"
+echo "  4. Run: sort-scanned-notes (to move to course folders)"
+echo ""
+print_info "AI will learn from your corrections over time!"
+
+# Open Obsidian
+if command -v obsidian &>/dev/null; then
+    swaymsg 'workspace 1; exec obsidian' &>/dev/null || true
+fi
+
+if command -v notify-send &>/dev/null; then
+    notify-send "🤖 AI Processing Complete" "Processed $PROCESSED scans with course detection"
+fi

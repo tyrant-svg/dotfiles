@@ -1,0 +1,29 @@
+#!/bin/bash
+# Cyberpunk Animated Wallpaper Launcher
+
+WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+VIDEO_WALLPAPER="$WALLPAPER_DIR/cyberpunk.mp4"
+
+# Kill existing wallpaper processes
+killall swaybg mpvpaper 2>/dev/null
+
+# Check if mpvpaper is installed
+if ! command -v mpvpaper &> /dev/null; then
+    echo "mpvpaper not installed! Install with: paru -S mpvpaper"
+    notify-send "Animated Wallpaper" "mpvpaper not installed!" -u critical
+    exit 1
+fi
+
+# Check if video wallpaper exists
+if [ -f "$VIDEO_WALLPAPER" ]; then
+    # Use animated wallpaper on all outputs (NVIDIA hardware decoding)
+    mpvpaper -o "loop hwdec=nvdec profile=fast" '*' "$VIDEO_WALLPAPER" &
+    notify-send "🎬 Animated Wallpaper" "Cyberpunk vibes activated! (GPU-accelerated)" -t 3000
+else
+    echo "Video wallpaper not found at: $VIDEO_WALLPAPER"
+    echo "Download a cyberpunk video and save it there!"
+    notify-send "Animated Wallpaper" "No video found!\nPlace MP4 at: $VIDEO_WALLPAPER" -t 5000
+
+    # Fallback to static wallpaper
+    swaybg -o '*' -i "$WALLPAPER_DIR/colorshift.png" -m fill &
+fi

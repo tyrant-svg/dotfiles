@@ -1,0 +1,4 @@
+#!/bin/bash
+# Focus window to the left (vim-style)
+xdotool getactivewindow windowmove --relative -- -50 0 2>/dev/null || \
+qdbus6 org.kde.KWin /KWin org.kde.KWin.previousDesktop 2>/dev/null

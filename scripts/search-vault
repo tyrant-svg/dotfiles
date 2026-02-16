@@ -1,0 +1,59 @@
+#!/bin/bash
+# Search indexed vault
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+QUERY="$1"
+
+if [ -z "$QUERY" ]; then
+    echo "Usage: search-vault 'your search query'"
+    exit 1
+fi
+
+python3 << PYEOF
+import chromadb
+from chromadb.utils import embedding_functions
+from pathlib import Path
+
+query = "$QUERY"
+
+client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+
+try:
+    collection = client.get_collection(
+        name="vault_notes",
+        embedding_function=sentence_transformer_ef
+    )
+except:
+    print("❌ Vault not indexed yet. Run: index-vault")
+    exit(1)
+
+print(f"Searching for: '{query}'")
+print()
+
+results = collection.query(
+    query_texts=[query],
+    n_results=5
+)
+
+print("Top 5 matches:")
+print("="*60)
+print()
+
+for i, (doc, meta, distance) in enumerate(zip(
+    results['documents'][0],
+    results['metadatas'][0],
+    results['distances'][0]
+)):
+    print(f"{i+1}. {meta['filename']}")
+    print(f"   Course: {meta['course']}")
+    print(f"   Relevance: {(1-distance)*100:.1f}%")
+    print(f"   Preview: {doc[:150]}...")
+    print()
+PYEOF

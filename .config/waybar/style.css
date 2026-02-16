@@ -1,0 +1,296 @@
+/* ═══════════════════════════════════════════════════════════════════
+   CYBERPUNK WAYBAR - MODERNIZED
+   Sleek, efficient, purple/cyan theme
+   ═══════════════════════════════════════════════════════════════════ */
+
+* {
+  font-family: "JetBrainsMono Nerd Font", "JetBrainsMono NFM", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+window#waybar {
+  background: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TOOLTIPS
+   ═══════════════════════════════════════════════════════════════════ */
+
+tooltip {
+  background: rgba(13, 13, 21, 0.95);
+  border: 1px solid #ac82e9;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+tooltip label {
+  color: #e0e0ff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WORKSPACES - Cyberpunk Focus
+   ═══════════════════════════════════════════════════════════════════ */
+
+#workspaces {
+  background: linear-gradient(90deg,
+    rgba(13, 13, 21, 0.8) 0%,
+    rgba(31, 27, 46, 0.8) 100%);
+  border-radius: 12px;
+  margin: 4px 0 4px 4px;
+  padding: 0 8px;
+  border: 1px solid rgba(172, 130, 233, 0.3);
+  box-shadow: 0 2px 10px rgba(172, 130, 233, 0.2);
+}
+
+#workspaces button {
+  color: #6b4d99;
+  background: transparent;
+  padding: 4px 10px;
+  margin: 2px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#workspaces button:hover {
+  color: #ac82e9;
+  background: rgba(172, 130, 233, 0.1);
+  box-shadow: 0 0 8px rgba(172, 130, 233, 0.3);
+}
+
+#workspaces button.focused,
+#workspaces button.active {
+  color: #00d9ff;
+  background: transparent;
+  border-bottom: 2px solid #00d9ff;
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.3);
+  font-weight: bold;
+}
+
+#workspaces button.urgent {
+  color: #ff006e;
+  background: rgba(255, 0, 110, 0.2);
+  animation: urgent-pulse 1s ease-in-out infinite;
+}
+
+@keyframes urgent-pulse {
+  0% { box-shadow: 0 0 8px rgba(255, 0, 110, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(255, 0, 110, 0.6); }
+  100% { box-shadow: 0 0 8px rgba(255, 0, 110, 0.3); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MODE INDICATOR
+   ═══════════════════════════════════════════════════════════════════ */
+
+#mode {
+  background: linear-gradient(90deg,
+    rgba(255, 0, 110, 0.2) 0%,
+    rgba(172, 130, 233, 0.2) 100%);
+  color: #ff006e;
+  padding: 4px 16px;
+  margin: 4px 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 0, 110, 0.4);
+  box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SEPARATORS
+   ═══════════════════════════════════════════════════════════════════ */
+
+#custom-separator {
+  color: #ac82e9;
+  background: transparent;
+  padding: 0 8px;
+  margin: 4px 0;
+  font-size: 18px;
+  text-shadow: 0 0 8px rgba(172, 130, 233, 0.5);
+}
+
+#custom-separator-dim {
+  color: rgba(172, 130, 233, 0.3);
+  background: transparent;
+  padding: 0 6px;
+  margin: 4px 0;
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STEAM MODULE - Gaming Focus
+   ═══════════════════════════════════════════════════════════════════ */
+
+#custom-steam {
+  background: linear-gradient(135deg,
+    rgba(172, 130, 233, 0.15) 0%,
+    rgba(0, 217, 255, 0.1) 100%);
+  color: #ac82e9;
+  padding: 4px 16px;
+  margin: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(172, 130, 233, 0.4);
+  box-shadow: 0 2px 10px rgba(172, 130, 233, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#custom-steam:hover {
+  background: linear-gradient(135deg,
+    rgba(0, 217, 255, 0.25) 0%,
+    rgba(172, 130, 233, 0.2) 100%);
+  color: #00d9ff;
+  border-color: #00d9ff;
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CENTER - Logo + Clock
+   ═══════════════════════════════════════════════════════════════════ */
+
+#custom-logo {
+  background: linear-gradient(135deg,
+    rgba(172, 130, 233, 0.3) 0%,
+    rgba(0, 217, 255, 0.2) 100%);
+  color: #ac82e9;
+  padding: 4px 16px;
+  margin: 4px 8px 4px 0;
+  border-radius: 12px;
+  border: 2px solid #ac82e9;
+  box-shadow: 0 0 15px rgba(172, 130, 233, 0.4);
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#clock {
+  background: linear-gradient(90deg,
+    rgba(31, 27, 46, 0.9) 0%,
+    rgba(13, 13, 21, 0.9) 50%,
+    rgba(31, 27, 46, 0.9) 100%);
+  color: #ffffff;
+  padding: 4px 24px;
+  margin: 4px 0;
+  border-radius: 12px;
+  border-left: 2px solid #ac82e9;
+  border-right: 2px solid #00d9ff;
+  box-shadow:
+    0 4px 20px rgba(172, 130, 233, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SYSTEM MODULES - Right Side
+   ═══════════════════════════════════════════════════════════════════ */
+
+#cpu,
+#memory,
+#network,
+#pulseaudio,
+#custom-gpu,
+#tray {
+  background: rgba(31, 27, 46, 0.7);
+  padding: 4px 12px;
+  margin: 4px 2px;
+  border-radius: 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(172, 130, 233, 0.2);
+}
+
+/* GPU - Gaming priority */
+#custom-gpu {
+  color: #00d9ff;
+  background: linear-gradient(135deg,
+    rgba(0, 217, 255, 0.1) 0%,
+    rgba(31, 27, 46, 0.7) 100%);
+  border-color: rgba(0, 217, 255, 0.3);
+  font-weight: 600;
+}
+
+#custom-gpu:hover {
+  background: linear-gradient(135deg,
+    rgba(0, 217, 255, 0.2) 0%,
+    rgba(31, 27, 46, 0.9) 100%);
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+  border-color: #00d9ff;
+}
+
+/* CPU */
+#cpu {
+  color: #ac82e9;
+  border-left: 2px solid rgba(172, 130, 233, 0.4);
+}
+
+#cpu:hover {
+  background: rgba(172, 130, 233, 0.2);
+  box-shadow: 0 0 15px rgba(172, 130, 233, 0.3);
+}
+
+/* Memory */
+#memory {
+  color: #a855f7;
+  border-left: 2px solid rgba(168, 85, 247, 0.4);
+}
+
+#memory:hover {
+  background: rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+/* Audio */
+#pulseaudio {
+  color: #c4e881;
+}
+
+#pulseaudio:hover {
+  background: rgba(196, 232, 129, 0.15);
+  color: #c4e881;
+  box-shadow: 0 0 15px rgba(196, 232, 129, 0.3);
+}
+
+#pulseaudio.muted {
+  color: #8892b0;
+  background: rgba(136, 146, 176, 0.1);
+}
+
+/* Network */
+#network {
+  color: #00d9ff;
+  border-left: 2px solid rgba(0, 217, 255, 0.4);
+}
+
+#network:hover {
+  background: rgba(0, 217, 255, 0.15);
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+}
+
+#network.disconnected {
+  color: #ff006e;
+  background: rgba(255, 0, 110, 0.1);
+}
+
+/* System Tray */
+#tray {
+  background: rgba(31, 27, 46, 0.8);
+  padding: 4px 8px;
+  margin: 4px 4px 4px 2px;
+  border: 1px solid rgba(172, 130, 233, 0.3);
+}
+
+#tray > .passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+  animation: attention-pulse 1s ease-in-out infinite;
+}
+
+@keyframes attention-pulse {
+  0% { background: rgba(255, 0, 110, 0.1); }
+  50% { background: rgba(255, 0, 110, 0.3); }
+  100% { background: rgba(255, 0, 110, 0.1); }
+}

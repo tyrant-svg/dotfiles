@@ -1,0 +1,33 @@
+#!/bin/bash
+# Backup Obsidian vault
+# Usage: backup-vault [destination]
+
+VAULT_PATH="$HOME/University of Idaho"
+BACKUP_DIR="${1:-$HOME/Backups/Obsidian}"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+BACKUP_NAME="obsidian-vault-${TIMESTAMP}.tar.gz"
+
+# Create backup directory if needed
+mkdir -p "$BACKUP_DIR"
+
+# Check if vault exists
+if [ ! -d "$VAULT_PATH" ]; then
+    echo "Error: Vault not found at $VAULT_PATH"
+    exit 1
+fi
+
+echo "Backing up Obsidian vault..."
+cd "$HOME" || exit
+
+# Create compressed archive
+tar -czf "$BACKUP_DIR/$BACKUP_NAME" "University of Idaho" --exclude=".obsidian/workspace*" --exclude=".trash"
+
+# Keep only last 10 backups
+cd "$BACKUP_DIR" || exit
+ls -t obsidian-vault-*.tar.gz | tail -n +11 | xargs -r rm
+
+BACKUP_SIZE=$(du -h "$BACKUP_DIR/$BACKUP_NAME" | cut -f1)
+
+notify-send "Vault Backup Complete" "Size: $BACKUP_SIZE\nLocation: $BACKUP_DIR"
+echo "Backup created: $BACKUP_DIR/$BACKUP_NAME ($BACKUP_SIZE)"
+echo "Kept last 10 backups in $BACKUP_DIR"

@@ -1,0 +1,243 @@
+#!/bin/bash
+# Automated batch processor for bulk scanned notes
+# Processes all images in "Bulk Scans" folder with OCR and creates Obsidian notes
+# Usage: process-bulk-scans [--auto-sort]
+
+set -euo pipefail
+
+# Configuration
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+BULK_SCANS_PATH="$VAULT_PATH/00 - Inbox/Bulk Scans"
+DOCUMENTED_PATH="$VAULT_PATH/Documented"
+ASSETS_PATH="$VAULT_PATH/Assets"
+
+# Colors
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+NC='\033[0m'
+
+print_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+print_error() { echo -e "${RED}[✗]${NC} $1"; }
+print_header() { echo -e "${PURPLE}$1${NC}"; }
+
+AUTO_SORT=false
+if [[ "${1:-}" == "--auto-sort" ]]; then
+    AUTO_SORT=true
+fi
+
+# Create folders if they don't exist
+mkdir -p "$BULK_SCANS_PATH"
+mkdir -p "$DOCUMENTED_PATH"
+
+# Find all image files
+mapfile -t IMAGE_FILES < <(find "$BULK_SCANS_PATH" -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.pdf" \) 2>/dev/null)
+
+if [ ${#IMAGE_FILES[@]} -eq 0 ]; then
+    print_info "No scans found in Bulk Scans folder"
+    print_info "Place scanned images in: $BULK_SCANS_PATH"
+    exit 0
+fi
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║     BULK SCAN PROCESSOR - Automated Workflow      ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+print_info "Found ${#IMAGE_FILES[@]} scan(s) to process"
+echo ""
+
+# Course detection keywords (for auto-tagging)
+declare -A COURSE_KEYWORDS=(
+    ["FOR3100"]="ecosystem|ecology|forest ecology|silviculture|stand"
+    ["ENT4690"]="entomology|insect|beetle|pest|bark beetle|defoliator"
+    ["FIR3326"]="fire ecology|wildfire|prescribed fire|fuel|combustion"
+    ["ECON2202"]="economics|microeconomics|supply|demand|market|price"
+    ["BIO114"]="biology|organism|cell|DNA|evolution"
+    ["FOR4400"]="silviculture"
+    ["FOR4500"]="forest operations|logging|harvest"
+    ["FOR4600"]="watershed|hydrology|water|riparian"
+)
+
+# Simple course detection from OCR text
+detect_course() {
+    local ocr_text="$1"
+    local detected=""
+
+    for course in "${!COURSE_KEYWORDS[@]}"; do
+        keywords="${COURSE_KEYWORDS[$course]}"
+        if echo "$ocr_text" | grep -qiE "$keywords"; then
+            detected="$course"
+            break
+        fi
+    done
+
+    echo "$detected"
+}
+
+# Process each image
+PROCESSED_COUNT=0
+DATE=$(date +'%Y-%m-%d')
+BATCH_TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+
+for img_file in "${IMAGE_FILES[@]}"; do
+    PROCESSED_COUNT=$((PROCESSED_COUNT + 1))
+    filename=$(basename "$img_file")
+    ext="${filename##*.}"
+
+    print_info "[$PROCESSED_COUNT/${#IMAGE_FILES[@]}] Processing: $filename"
+
+    # Generate note name
+    NOTE_NUM=$(printf "%04d" $PROCESSED_COUNT)
+    NOTE_TITLE="Scan ${BATCH_TIMESTAMP}-${NOTE_NUM}"
+    SAFE_TITLE="Scan_${BATCH_TIMESTAMP}_${NOTE_NUM}"
+
+    # Copy to Assets with organized name
+    asset_name="${SAFE_TITLE}.${ext}"
+    cp "$img_file" "$ASSETS_PATH/$asset_name"
+    print_success "  → Saved to Assets: $asset_name"
+
+    # Run OCR
+    print_info "  → Running OCR..."
+    OCR_TEXT=""
+
+    if [[ "$ext" =~ ^(jpg|jpeg|png)$ ]]; then
+        OCR_TEXT=$(tesseract "$img_file" stdout 2>/dev/null || echo "[OCR failed]")
+    elif [[ "$ext" == "pdf" ]]; then
+        if command -v pdftotext &>/dev/null; then
+            OCR_TEXT=$(pdftotext "$img_file" - 2>/dev/null || echo "[PDF text extraction failed]")
+        else
+            OCR_TEXT="[PDF processing not available - install poppler]"
+        fi
+    fi
+
+    # Detect course from OCR (if possible)
+    DETECTED_COURSE=$(detect_course "$OCR_TEXT")
+
+    if [ -n "$DETECTED_COURSE" ]; then
+        print_success "  → Auto-detected course: $DETECTED_COURSE"
+        TAG_ARRAY="scanned-notes, bulk-scan, $DETECTED_COURSE"
+        COURSE_LINE="course: $DETECTED_COURSE"
+    else
+        TAG_ARRAY="scanned-notes, bulk-scan, needs-sorting"
+        COURSE_LINE="# course: [UNKNOWN - Review and add]"
+    fi
+
+    # Create markdown note
+    NOTE_FILE="$DOCUMENTED_PATH/${NOTE_TITLE}.md"
+
+    cat > "$NOTE_FILE" <<EOF
+---
+title: "$NOTE_TITLE"
+date: $DATE
+tags: [$TAG_ARRAY]
+type: scanned-notes
+$COURSE_LINE
+scanned: $BATCH_TIMESTAMP
+batch: bulk-import
+source: $filename
+---
+
+# $NOTE_TITLE
+
+**Date:** $DATE
+**Source:** $filename
+$([ -n "$DETECTED_COURSE" ] && echo "**Course:** [[$DETECTED_COURSE]]")
+**Status:** 🔍 Needs Review
+
+---
+
+## Scanned Image
+
+![[${asset_name}]]
+
+---
+
+## OCR Text (Raw)
+
+> [!note] OCR Extraction
+> Review and clean up the text below. Add proper formatting, headers, and wikilinks.
+
+$OCR_TEXT
+
+---
+
+## Cleaned Notes
+
+<!-- After reviewing OCR, organize your notes here -->
+
+### Summary
+
+
+### Key Points
+
+-
+
+### Related Concepts
+
+-
+
+---
+
+## Tasks
+
+- [ ] Review OCR accuracy
+- [ ] Add proper title
+- [ ] Identify correct course
+- [ ] Add relevant tags
+- [ ] Create wikilinks to related notes
+- [ ] Move to course folder
+
+---
+
+## Related Notes
+
+- [[00 - Inbox]]
+$([ -n "$DETECTED_COURSE" ] && echo "- [[$DETECTED_COURSE MOC]]")
+
+---
+
+*Auto-processed with process-bulk-scans on $DATE*
+EOF
+
+    print_success "  → Created note: ${NOTE_TITLE}.md"
+
+    # Delete original from Bulk Scans
+    rm "$img_file"
+    print_info "  → Removed from Bulk Scans"
+
+    echo ""
+done
+
+print_header "╔════════════════════════════════════════════════════╗"
+print_header "║              PROCESSING COMPLETE!                  ║"
+print_header "╚════════════════════════════════════════════════════╝"
+echo ""
+print_success "Processed $PROCESSED_COUNT scan(s)"
+print_success "Notes created in: Documented/"
+print_success "Images saved to: Assets/"
+echo ""
+print_info "Next Steps:"
+echo "  1. Open Obsidian and review notes in Documented/"
+echo "  2. Clean up OCR text in each note"
+echo "  3. Add correct titles and course info"
+echo "  4. Run: sort-scanned-notes (to organize by course)"
+echo ""
+print_info "Once AI is trained, this will auto-sort to course folders!"
+echo ""
+
+# Open Obsidian if available
+if command -v obsidian &>/dev/null; then
+    print_info "Opening Obsidian..."
+    swaymsg 'workspace 1; exec obsidian' &>/dev/null || true
+fi
+
+# Notification
+if command -v notify-send &>/dev/null; then
+    notify-send "📝 Bulk Scans Processed" "Processed $PROCESSED_COUNT scan(s)\nCheck Obsidian Inbox for review"
+fi
+
+print_success "✨ Done! Check your Obsidian Inbox."

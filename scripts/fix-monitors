@@ -1,0 +1,12 @@
+#!/bin/bash
+# Monitor Position Enforcement Script
+# Fixes the constant monitor switching issue
+# Called on sway startup to ensure correct layout
+
+# Physical layout: LEFT (HDMI-A-1) → CENTER (DP-1) → RIGHT (DP-2)
+swaymsg output HDMI-A-1 mode 1920x1080@74.973Hz position 0 0
+swaymsg output DP-1 mode 1920x1080@74.973Hz position 1920 0
+swaymsg output DP-2 mode 1920x1080@60.00Hz position 3840 0
+
+# Notify on success
+notify-send "🖥️ Monitors Fixed" "Layout: HDMI (L) → DP-1 (C) → DP-2 (R)" -t 2000

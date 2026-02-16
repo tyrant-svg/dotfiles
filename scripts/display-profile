@@ -1,0 +1,50 @@
+#!/bin/bash
+# Display profile manager for Sway
+# Usage: display-profile <work|gaming|presentation|single>
+
+PROFILE="${1:-work}"
+
+case "$PROFILE" in
+    work)
+        # Triple display (normal work setup)
+        swaymsg "output HDMI-A-1 enable resolution 1920x1080@74.973Hz position 0,0"
+        swaymsg "output DP-1 enable resolution 1920x1080@74.973Hz position 1920,0"
+        swaymsg "output DP-2 enable resolution 1920x1080@60.00Hz position 3840,0"
+        notify-send "Display Profile: Work" "Triple display enabled"
+        ;;
+
+    gaming)
+        # Single DP-1 (center) @ 75Hz
+        swaymsg "output HDMI-A-1 disable"
+        swaymsg "output DP-2 disable"
+        swaymsg "output DP-1 enable resolution 1920x1080@74.973Hz position 0,0"
+        notify-send "Display Profile: Gaming" "Single display (DP-1 center, 75Hz)"
+        ;;
+
+    presentation)
+        # Center only @ 75Hz
+        swaymsg "output HDMI-A-1 disable"
+        swaymsg "output DP-2 disable"
+        swaymsg "output DP-1 enable resolution 1920x1080@74.973Hz position 0,0"
+        notify-send "Display Profile: Presentation" "Center display only"
+        ;;
+
+    single)
+        # Single primary display (DP-1 center)
+        swaymsg "output HDMI-A-1 disable"
+        swaymsg "output DP-2 disable"
+        swaymsg "output DP-1 enable resolution 1920x1080@74.973Hz position 0,0"
+        notify-send "Display Profile: Single" "Primary display only"
+        ;;
+
+    *)
+        echo "Usage: display-profile <work|gaming|presentation|single>"
+        echo ""
+        echo "Profiles:"
+        echo "  work         - Triple display (default)"
+        echo "  gaming       - Single DP-2 display"
+        echo "  presentation - Center display only"
+        echo "  single       - Primary display only"
+        exit 1
+        ;;
+esac

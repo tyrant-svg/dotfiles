@@ -1,0 +1,36 @@
+#!/bin/bash
+# Cyberpunk terminal tools quick reference
+
+cat << 'HELP'
+╔══════════════════════════════════════════════════════════════╗
+║           🔮 CYBERPUNK TERMINAL TOOLKIT 🔮                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+🎵 MUSIC & MEDIA
+  ncspot              - Spotify TUI (? for help)
+  yt <query>          - YouTube search & play
+  yt -m <query>       - YouTube music mode
+  yt -t               - Trending videos
+  cava                - Audio visualizer
+
+📊 SYSTEM MONITORING  
+  btop                - System monitor (q to quit)
+  fastfetch           - System info
+  nvidia-smi          - GPU stats
+
+🎮 GAMING
+  game-launch <cmd>   - Launch games optimized
+  gamemoded -s        - Check gamemode status
+
+🎨 VISUALS & EYE CANDY
+  pipes.sh            - Animated pipes
+  cmatrix -C magenta  - Matrix rain
+  tty-clock -c -C 5   - Purple clock
+
+🔧 UTILITIES
+  mpv <url/file>      - Video player
+  yt-dlp <url>        - Download videos
+
+Press any key to exit...
+HELP
+read -n 1

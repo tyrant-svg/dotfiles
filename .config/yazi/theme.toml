@@ -1,0 +1,120 @@
+# Cyberpunk Theme for Yazi
+# Matching Sway purple/cyan aesthetic
+
+[manager]
+cwd = { fg = "#ac82e9", bold = true }
+
+# Hovered
+hovered         = { fg = "#0d0d15", bg = "#ac82e9" }
+preview_hovered = { underline = true }
+
+# Find
+find_keyword  = { fg = "#00d9ff", italic = true }
+find_position = { fg = "#ff006e", bg = "reset", italic = true }
+
+# Marker
+marker_selected = { fg = "#00d9ff", bg = "#00d9ff" }
+marker_copied   = { fg = "#c4e881", bg = "#c4e881" }
+marker_cut      = { fg = "#ff006e", bg = "#ff006e" }
+
+# Tab
+tab_active   = { fg = "#0d0d15", bg = "#ac82e9" }
+tab_inactive = { fg = "#8892b0", bg = "#1f1b2e" }
+tab_width    = 1
+
+# Border
+border_symbol = "│"
+border_style  = { fg = "#6b4d99" }
+
+# Highlighting
+syntect_theme = "~/.config/yazi/Catppuccin-mocha.tmTheme"
+
+[status]
+separator_open  = ""
+separator_close = ""
+separator_style = { fg = "#6b4d99", bg = "#6b4d99" }
+
+# Mode
+mode_normal = { fg = "#0d0d15", bg = "#00d9ff", bold = true }
+mode_select = { fg = "#0d0d15", bg = "#c4e881", bold = true }
+mode_unset  = { fg = "#0d0d15", bg = "#ff006e", bold = true }
+
+# Progress
+progress_label  = { fg = "#e0e0ff", bold = true }
+progress_normal = { fg = "#00d9ff", bg = "#1f1b2e" }
+progress_error  = { fg = "#ff006e", bg = "#1f1b2e" }
+
+# Permissions
+permissions_t = { fg = "#00d9ff" }
+permissions_r = { fg = "#c4e881" }
+permissions_w = { fg = "#ff006e" }
+permissions_x = { fg = "#ac82e9" }
+permissions_s = { fg = "#8892b0" }
+
+[input]
+border   = { fg = "#ac82e9" }
+title    = {}
+value    = {}
+selected = { reversed = true }
+
+[select]
+border   = { fg = "#ac82e9" }
+active   = { fg = "#00d9ff" }
+inactive = {}
+
+[tasks]
+border  = { fg = "#ac82e9" }
+title   = {}
+hovered = { underline = true }
+
+[which]
+mask            = { bg = "#0d0d15" }
+cand            = { fg = "#00d9ff" }
+rest            = { fg = "#8892b0" }
+desc            = { fg = "#ac82e9" }
+separator       = "  "
+separator_style = { fg = "#6b4d99" }
+
+[help]
+on      = { fg = "#00d9ff" }
+exec    = { fg = "#ac82e9" }
+desc    = { fg = "#8892b0" }
+hovered = { bg = "#1f1b2e", bold = true }
+footer  = { fg = "#0d0d15", bg = "#8892b0" }
+
+[filetype]
+
+rules = [
+	# Images
+	{ mime = "image/*", fg = "#00d9ff" },
+
+	# Videos
+	{ mime = "video/*", fg = "#ac82e9" },
+	{ mime = "audio/*", fg = "#ac82e9" },
+
+	# Archives
+	{ mime = "application/zip",             fg = "#ff006e" },
+	{ mime = "application/gzip",            fg = "#ff006e" },
+	{ mime = "application/x-tar",           fg = "#ff006e" },
+	{ mime = "application/x-bzip",          fg = "#ff006e" },
+	{ mime = "application/x-bzip2",         fg = "#ff006e" },
+	{ mime = "application/x-7z-compressed", fg = "#ff006e" },
+	{ mime = "application/x-rar",           fg = "#ff006e" },
+
+	# Documents
+	{ mime = "application/pdf", fg = "#c4e881" },
+	{ mime = "text/*",          fg = "#e0e0ff" },
+
+	# Code
+	{ name = "*.rs",   fg = "#ff8c42" },
+	{ name = "*.R",    fg = "#276dc3" },
+	{ name = "*.py",   fg = "#ffde57" },
+	{ name = "*.js",   fg = "#f7df1e" },
+	{ name = "*.json", fg = "#c4e881" },
+	{ name = "*.toml", fg = "#ac82e9" },
+	{ name = "*.md",   fg = "#e0e0ff" },
+
+	# Fallback
+	{ name = "*", fg = "#e0e0ff" },
+	{ name = "*/", fg = "#00d9ff" }
+]

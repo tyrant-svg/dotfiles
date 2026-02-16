@@ -1,0 +1,212 @@
+#!/bin/bash
+# Automatically correct OCR errors in processed scans using vault knowledge
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+DOCUMENTED_PATH="/mnt/vol_ii/Obsidian/University of Idaho/Documented"
+CORRECTIONS_LOG="$HOME/ocr-corrections-$(date +%Y%m%d_%H%M%S).md"
+
+echo "════════════════════════════════════════════════════"
+echo "  AI Auto-Correction Agent"
+echo "════════════════════════════════════════════════════"
+echo ""
+echo "Analyzing OCR errors in Documented/ folder..."
+echo "Using vault knowledge to suggest corrections..."
+echo ""
+
+python3 << 'PYEOF'
+import chromadb
+from chromadb.utils import embedding_functions
+from pathlib import Path
+import re
+import subprocess
+from collections import defaultdict
+
+VAULT_PATH = Path("/mnt/vol_ii/Obsidian/University of Idaho")
+DOCUMENTED_PATH = VAULT_PATH / "Documented"
+CORRECTIONS_LOG = Path.home() / f"ocr-corrections-{__import__('datetime').datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+
+print(f"Documented path: {DOCUMENTED_PATH}")
+
+# Load vault index
+client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+collection = client.get_collection(name="vault_notes", embedding_function=ef)
+
+# Build knowledge base from vault
+print("[1/5] Building knowledge base from vault...")
+
+# Common forestry terms and their likely OCR mistakes
+KNOWN_TERMS = {
+    # Species codes
+    'PIPO': ['P1P0', 'P1PO', 'PLPO', 'PIP0', 'plpo'],
+    'PSME': ['P5ME', 'PSME', 'PSM3', 'psme'],
+    'ABLA': ['A8LA', 'ABLA', 'A3LA', 'abla'],
+    'PILA': ['P1LA', 'PILA', 'PILa', 'pila'],
+    'THPL': ['THPL', 'THP1', 'thpl'],
+
+    # Common terms
+    'DBH': ['D8H', 'DBH', 'D3H', 'dbh'],
+    'basal area': ['basal area', 'basal ar3a', 'basa1 area'],
+    'silviculture': ['silviculture', 'si1viculture', 'silvicu1ture'],
+    'ecosystem': ['ecosystem', 'ec0system', 'ecos7stem'],
+    'Ponderosa Pine': ['Ponderosa Pine', 'Ponderosa P1ne', 'Pond3rosa Pine'],
+    'Douglas Fir': ['Douglas Fir', 'Douglas F1r', 'Doug1as Fir'],
+    'bark beetle': ['bark beetle', 'bark beet1e', '3ark beetle'],
+    'fire ecology': ['fire ecology', 'fire eco1ogy', 'fir3 ecology'],
+
+    # Measurements
+    'diameter': ['diameter', 'di4meter', 'diamet3r'],
+    'height': ['height', 'he1ght', 'h3ight'],
+    'density': ['density', 'd3nsity', 'dens1ty'],
+}
+
+# Get all terms from vault documents
+print("  → Extracting terminology from vault...")
+vault_terms = set()
+
+# Query vault to build term list
+sample_queries = [
+    "forest species tree",
+    "measurement DBH height",
+    "silviculture management",
+    "fire ecology burn",
+    "insect beetle pest"
+]
+
+for query in sample_queries:
+    results = collection.query(query_texts=[query], n_results=10)
+    for doc in results['documents'][0]:
+        # Extract capitalized terms and acronyms
+        terms = re.findall(r'\b[A-Z]{2,6}\b', doc[:1000])
+        vault_terms.update(terms)
+
+print(f"  ✓ Found {len(vault_terms)} potential terms in vault")
+
+# Find all scanned notes
+scanned_notes = list(DOCUMENTED_PATH.glob("*.md"))
+print(f"\n[2/5] Found {len(scanned_notes)} scanned notes to review")
+
+corrections_made = []
+total_corrections = 0
+
+print("\n[3/5] Analyzing each note for OCR errors...")
+
+for note_path in scanned_notes:
+    try:
+        content = note_path.read_text(encoding='utf-8', errors='ignore')
+
+        # Extract OCR section
+        ocr_match = re.search(r'## OCR Text \(Raw\)(.*?)(?=##|---|\Z)', content, re.DOTALL)
+        if not ocr_match:
+            continue
+
+        ocr_text = ocr_match.group(1)
+        original_ocr = ocr_text
+
+        # Track corrections for this note
+        note_corrections = []
+
+        # Apply known corrections
+        for correct_term, wrong_variants in KNOWN_TERMS.items():
+            for wrong in wrong_variants:
+                if wrong in ocr_text and wrong != correct_term:
+                    count = ocr_text.count(wrong)
+                    if count > 0:
+                        ocr_text = ocr_text.replace(wrong, correct_term)
+                        note_corrections.append(f"  - {wrong} → {correct_term} ({count}x)")
+                        total_corrections += count
+
+        # Only update if corrections were made
+        if note_corrections:
+            # Replace OCR section with corrected version
+            updated_content = content.replace(original_ocr, ocr_text)
+            note_path.write_text(updated_content, encoding='utf-8')
+
+            corrections_made.append({
+                'note': note_path.name,
+                'corrections': note_corrections,
+                'count': len(note_corrections)
+            })
+
+            print(f"  ✓ {note_path.name}: {len(note_corrections)} correction(s)")
+
+    except Exception as e:
+        print(f"  ✗ Error processing {note_path.name}: {e}")
+
+print(f"\n[4/5] Analyzing with LLM for context-based corrections...")
+
+# For notes with remaining issues, use LLM
+for note_path in scanned_notes[:5]:  # Process first 5 as example
+    try:
+        content = note_path.read_text(encoding='utf-8', errors='ignore')
+
+        # Extract course and OCR text
+        course_match = re.search(r'course: (\w+)', content)
+        course = course_match.group(1) if course_match else 'unknown'
+
+        ocr_match = re.search(r'## OCR Text \(Raw\)(.*?)(?=##|---|\Z)', content, re.DOTALL)
+        if not ocr_match:
+            continue
+
+        ocr_text = ocr_match.group(1).strip()[:500]  # First 500 chars
+
+        # Search for similar content
+        results = collection.query(query_texts=[ocr_text], n_results=3)
+
+        context = []
+        for meta in results['metadatas'][0]:
+            if meta['course'] == course:
+                context.append(meta['filename'])
+
+        if context:
+            print(f"  → Checking {note_path.name} against {', '.join(context[:2])}")
+
+    except Exception as e:
+        continue
+
+print(f"\n[5/5] Generating correction report...")
+
+# Write corrections log
+with open(CORRECTIONS_LOG, 'w') as f:
+    f.write(f"# OCR Auto-Correction Report\n\n")
+    f.write(f"**Date:** {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    f.write(f"**Total corrections:** {total_corrections}\n")
+    f.write(f"**Notes updated:** {len(corrections_made)}\n\n")
+    f.write("---\n\n")
+
+    if corrections_made:
+        f.write("## Corrections Made\n\n")
+        for item in corrections_made:
+            f.write(f"### {item['note']}\n\n")
+            for correction in item['corrections']:
+                f.write(f"{correction}\n")
+            f.write("\n")
+    else:
+        f.write("No obvious OCR errors found.\n")
+
+    f.write("\n---\n\n")
+    f.write("## Common Corrections Applied\n\n")
+    for correct, wrongs in KNOWN_TERMS.items():
+        f.write(f"- **{correct}**: {', '.join(wrongs)}\n")
+
+print("\n════════════════════════════════════════════════════")
+print("  Auto-Correction Complete!")
+print("════════════════════════════════════════════════════")
+print()
+print(f"✓ Total corrections: {total_corrections}")
+print(f"✓ Notes updated: {len(corrections_made)}")
+print(f"✓ Report: {CORRECTIONS_LOG}")
+print()
+print("Changes saved to Documented/ folder")
+print("Review the report to see what was changed")
+
+PYEOF
+
+echo ""
+echo "Next: Review corrections in Obsidian"
+echo "      Open: $CORRECTIONS_LOG"

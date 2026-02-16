@@ -1,0 +1,65 @@
+#!/bin/bash
+# YouTube Menu - Clean fzf interface
+
+if [[ -z "$1" ]]; then
+    echo "Usage: ytm <search query>"
+    echo "Example: ytm cyberpunk ambient"
+    exit 1
+fi
+
+query="$*"
+echo "🔍 Searching YouTube: $query"
+
+# Get results with titles and URLs
+results=$(yt-dlp "ytsearch20:$query" \
+    --get-title \
+    --get-id \
+    --get-duration \
+    --flat-playlist 2>/dev/null)
+
+if [[ -z "$results" ]]; then
+    echo "❌ No results found"
+    exit 1
+fi
+
+# Parse results into a nice format
+declare -a entries
+declare -a urls
+i=0
+
+while IFS= read -r line; do
+    case $((i % 3)) in
+        0) title="$line" ;;
+        1) id="$line" ;;
+        2) 
+            duration="$line"
+            entries+=("[$duration] $title")
+            urls+=("https://youtube.com/watch?v=$id")
+            ;;
+    esac
+    ((i++))
+done <<< "$results"
+
+# Show fzf menu
+selected=$(printf '%s\n' "${entries[@]}" | fzf \
+    --prompt="▶️  " \
+    --header="Select video (ESC to cancel)" \
+    --reverse \
+    --height=60% \
+    --border \
+    --preview-window=hidden \
+    --color="fg:#e0e0ff,bg:#0d0d15,hl:#ac82e9,fg+:#00d9ff,bg+:#1f1b2e,hl+:#ac82e9,border:#6b4d99,prompt:#ac82e9,pointer:#00d9ff")
+
+if [[ -z "$selected" ]]; then
+    echo "Cancelled"
+    exit 0
+fi
+
+# Find the index and play
+for i in "${!entries[@]}"; do
+    if [[ "${entries[$i]}" == "$selected" ]]; then
+        echo "▶️  Playing: ${entries[$i]}"
+        mpv "${urls[$i]}"
+        break
+    fi
+done

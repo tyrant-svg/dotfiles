@@ -1,0 +1,99 @@
+#!/bin/bash
+# Create new Rust project with Obsidian documentation
+# Usage: new-forestry-rust <project-name> "Description"
+
+PROJECT_NAME="$1"
+DESCRIPTION="$2"
+
+if [ -z "$PROJECT_NAME" ]; then
+    echo "Usage: new-forestry-rust <project-name> \"Description\""
+    exit 1
+fi
+
+PROJECTS_DIR="$HOME/rust-projects"
+VAULT_PATH="$HOME/University of Idaho"
+DATE=$(date +'%Y-%m-%d')
+
+# Create project directory if needed
+mkdir -p "$PROJECTS_DIR"
+
+# Create Rust project
+cd "$PROJECTS_DIR" || exit
+cargo new "$PROJECT_NAME"
+cd "$PROJECT_NAME" || exit
+
+# Add common dependencies
+cargo add anyhow thiserror 2>/dev/null || true
+cargo add clap --features derive 2>/dev/null || true
+cargo add serde --features derive 2>/dev/null || true
+
+# Create Obsidian project note
+NOTE_FILE="$VAULT_PATH/Rust Project - ${PROJECT_NAME}.md"
+cat > "$NOTE_FILE" <<EOF
+---
+title: "Rust Project - ${PROJECT_NAME}"
+date: ${DATE}
+tags: [rust, project, programming]
+project-status: active
+---
+
+# ${PROJECT_NAME}
+
+**Started:** ${DATE}
+**Status:** Active Development
+**Location:** \`${PROJECTS_DIR}/${PROJECT_NAME}\`
+
+## Description
+
+${DESCRIPTION:-Rust project for forestry/data analysis}
+
+## Goals
+
+- [ ] Define project goals
+- [ ] Implement core functionality
+- [ ] Write tests
+- [ ] Document code
+
+## Dependencies
+
+- \`anyhow\` - Error handling
+- \`thiserror\` - Custom error types
+- \`clap\` - Command-line argument parsing
+- \`serde\` - Serialization/deserialization
+
+## Architecture
+
+<!-- High-level architecture overview -->
+
+## Implementation Notes
+
+<!-- Track decisions, challenges, solutions -->
+
+## Testing
+
+\`\`\`bash
+# Run tests
+cargo test
+
+# Run with example
+cargo run -- [args]
+\`\`\`
+
+## Related Notes
+
+- [[Rust Programming MOC]]
+- [[Rust Best Practices]]
+
+---
+
+*Created with new-forestry-rust on ${DATE}*
+EOF
+
+# Open VSCode and Obsidian
+swaymsg "workspace 3; exec code-oss '$PROJECTS_DIR/$PROJECT_NAME'" &
+sleep 1
+swaymsg 'workspace 1; exec obsidian' &
+
+notify-send "Rust Project Created" "$PROJECT_NAME ready"
+echo "Project created: $PROJECTS_DIR/$PROJECT_NAME"
+echo "Note created: $NOTE_FILE"

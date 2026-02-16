@@ -1,0 +1,88 @@
+#!/bin/bash
+# R analysis results to Obsidian note
+# Usage: r-to-obsidian "Title" results.csv COURSE_CODE
+
+TITLE="$1"
+RESULTS_FILE="$2"
+COURSE="$3"
+
+if [ -z "$TITLE" ] || [ -z "$COURSE" ]; then
+    echo "Usage: r-to-obsidian \"Title\" [results-file] COURSE_CODE"
+    exit 1
+fi
+
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+DATE=$(date +'%Y-%m-%d')
+NOTE_FILE="$VAULT_PATH/R Analysis - ${TITLE}.md"
+
+# Create the note
+cat > "$NOTE_FILE" <<EOF
+---
+title: "R Analysis - ${TITLE}"
+date: ${DATE}
+tags: [r-analysis, ${COURSE}, data-analysis]
+course: ${COURSE}
+---
+
+# ${TITLE}
+
+**Date:** ${DATE}
+**Course:** [[${COURSE}]]
+
+## Analysis Overview
+
+<!-- Brief description of the analysis -->
+
+## Data Source
+
+EOF
+
+# Add results file reference if provided
+if [ -n "$RESULTS_FILE" ] && [ -f "$RESULTS_FILE" ]; then
+    echo "**Results File:** \`${RESULTS_FILE}\`" >> "$NOTE_FILE"
+    echo "" >> "$NOTE_FILE"
+fi
+
+cat >> "$NOTE_FILE" <<EOF
+
+## Methods
+
+<!-- Describe the analytical methods used -->
+
+## Results
+
+<!-- Key findings and visualizations -->
+
+## Interpretation
+
+<!-- What do the results mean? -->
+
+## Next Steps
+
+- [ ] Review results with course material
+- [ ] Create visualizations if needed
+- [ ] Document key insights
+- [ ] Link to related notes
+
+## Code Reference
+
+\`\`\`r
+# R code used for this analysis
+# (Copy relevant code here)
+\`\`\`
+
+## Related Notes
+
+- [[${COURSE} MOC]]
+- [[R Programming Examples]]
+
+---
+
+*Generated with r-to-obsidian on ${DATE}*
+EOF
+
+# Open in Obsidian
+swaymsg 'workspace 1; exec obsidian' &
+
+notify-send "R → Obsidian" "Created: $TITLE"
+echo "Note created: $NOTE_FILE"

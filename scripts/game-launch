@@ -1,0 +1,19 @@
+#!/bin/bash
+# Optimized game launcher with gamemode + environment tweaks
+
+# Nvidia-specific optimizations
+export __GL_SHADER_DISK_CACHE=1
+export __GL_SHADER_DISK_CACHE_PATH="$HOME/.cache/nvidia"
+export __GL_THREADED_OPTIMIZATION=1
+
+# Proton/Wine optimizations  
+export DXVK_STATE_CACHE=1
+export DXVK_STATE_CACHE_PATH="$HOME/.cache/dxvk"
+export DXVK_LOG_LEVEL=none
+export WINE_CPU_TOPOLOGY=16:0  # Adjust if you have different core count
+
+# Vulkan
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+
+# Launch with gamemode
+exec gamemoderun "$@"

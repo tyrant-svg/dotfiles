@@ -1,0 +1,7 @@
+#!/bin/bash
+# ncspot with debug output
+
+echo "🎵 Starting ncspot with debug info..."
+echo ""
+
+RUST_BACKTRACE=1 RUST_LOG=debug ncspot 2>&1 | tee /tmp/ncspot-debug.log

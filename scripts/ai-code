@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+"""AI Coding Assistant - Cyberpunk Edition"""
+
+import sys
+import json
+import urllib.request
+import urllib.error
+
+API_URL = "http://localhost:1234/v1/chat/completions"
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: ai-code <your coding question>")
+        print("Example: ai-code how do I parse JSON in R?")
+        sys.exit(1)
+
+    prompt = " ".join(sys.argv[1:])
+
+    # Check if server is running
+    try:
+        urllib.request.urlopen("http://localhost:1234/v1/models", timeout=2)
+    except:
+        print("❌ LM Studio server is not running!")
+        print("Start it with: lms server start && lms load qwen2.5-coder-7b-instruct")
+        sys.exit(1)
+
+    print()
+    print("╔═══════════════════════════════════════════════════════════════════╗")
+    print("║  🤖 AI CODING ASSISTANT (Qwen2.5-Coder-7B)                       ║")
+    print("╚═══════════════════════════════════════════════════════════════════╝")
+    print()
+    print("⚡ Processing your question...")
+    print()
+
+    # Prepare request
+    data = {
+        "model": "qwen2.5-coder-7b-instruct",
+        "messages": [
+            {"role": "system", "content": "You are a helpful coding assistant. Provide concise, practical code examples. Focus on R, Rust, Python, and shell scripting."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.3,
+        "max_tokens": 2000
+    }
+
+    # Send request
+    try:
+        req = urllib.request.Request(
+            API_URL,
+            data=json.dumps(data).encode('utf-8'),
+            headers={'Content-Type': 'application/json'}
+        )
+        with urllib.request.urlopen(req, timeout=60) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            content = result['choices'][0]['message']['content']
+            print(content)
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
+
+    print()
+    print("──────────────────────────────────────────────────────────────────")
+
+if __name__ == "__main__":
+    main()

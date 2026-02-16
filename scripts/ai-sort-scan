@@ -1,0 +1,195 @@
+#!/bin/bash
+# AI-powered scan sorter with error correction
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+SCAN_IMAGE="$1"
+
+if [ -z "$SCAN_IMAGE" ] || [ ! -f "$SCAN_IMAGE" ]; then
+    echo "Usage: ai-sort-scan <path-to-scan-image>"
+    echo ""
+    echo "Example:"
+    echo "  ai-sort-scan /mnt/vol_ii/Obsidian/University\ of\ Idaho/Assets/Scan_*.png"
+    exit 1
+fi
+
+echo "════════════════════════════════════════════════════"
+echo "  AI-Powered Scan Analysis"
+echo "════════════════════════════════════════════════════"
+echo ""
+echo "Scan: $(basename "$SCAN_IMAGE")"
+echo ""
+
+python3 << PYEOF
+import easyocr
+import chromadb
+from chromadb.utils import embedding_functions
+from pathlib import Path
+import subprocess
+import json
+
+# OCR the scan
+print("[1/4] Running OCR (this takes ~10 seconds)...")
+reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+results = reader.readtext('$SCAN_IMAGE')
+
+ocr_text = ' '.join([text for _, text, _ in results])
+print(f"✓ Extracted {len(ocr_text)} characters")
+print()
+print("OCR Preview:")
+print("-" * 60)
+print(ocr_text[:300] + "..." if len(ocr_text) > 300 else ocr_text)
+print("-" * 60)
+print()
+
+# Search vault for similar content
+print("[2/4] Searching vault for similar content...")
+
+client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+
+collection = client.get_collection(
+    name="vault_notes",
+    embedding_function=sentence_transformer_ef
+)
+
+search_results = collection.query(
+    query_texts=[ocr_text[:1000]],  # Use first 1000 chars
+    n_results=3
+)
+
+print("✓ Found related notes:")
+for i, (meta, distance) in enumerate(zip(
+    search_results['metadatas'][0],
+    search_results['distances'][0]
+)):
+    relevance = (1 - distance) * 100
+    print(f"  {i+1}. {meta['filename']} (Course: {meta['course']}, {relevance:.1f}% match)")
+
+print()
+
+# Determine course from search results
+courses = [meta['course'] for meta in search_results['metadatas'][0]]
+detected_course = max(set(courses), key=courses.count) if courses else "unknown"
+
+print(f"✓ Detected course: {detected_course}")
+print()
+
+# Use Ollama to analyze and correct
+print("[3/4] Using AI to analyze content...")
+
+# Build context from search results
+context = "\\n\\n".join([
+    f"Related note: {meta['filename']} (Course: {meta['course']})"
+    for meta in search_results['metadatas'][0]
+])
+
+prompt = f"""You are a forestry course assistant analyzing scanned handwritten notes.
+
+DETECTED COURSE: {detected_course}
+
+RELATED NOTES FROM VAULT:
+{context}
+
+OCR TEXT FROM SCAN:
+{ocr_text[:500]}
+
+TASK:
+1. Identify the main topic (2-4 words)
+2. Suggest a proper note title
+3. List key concepts mentioned
+4. Identify any obvious OCR errors
+5. Suggest relevant wikilinks based on the related notes
+
+Respond in JSON format:
+{{
+  "topic": "main topic",
+  "suggested_title": "Proper Title for Note",
+  "key_concepts": ["concept1", "concept2"],
+  "ocr_errors": ["error1 should be correction1"],
+  "wikilinks": ["[[Related Note 1]]", "[[Related Note 2]]"]
+}}
+"""
+
+# Call Ollama
+result = subprocess.run(
+    ['ollama', 'run', 'llama3.1:8b', prompt],
+    capture_output=True,
+    text=True,
+    timeout=60
+)
+
+ai_response = result.stdout.strip()
+
+print("✓ AI analysis complete")
+print()
+
+# Parse AI response (try to extract JSON)
+try:
+    # Find JSON in response
+    json_start = ai_response.find('{')
+    json_end = ai_response.rfind('}') + 1
+    if json_start >= 0 and json_end > json_start:
+        ai_data = json.loads(ai_response[json_start:json_end])
+    else:
+        ai_data = {
+            "topic": "Scanned Notes",
+            "suggested_title": "Scanned Note - " + detected_course,
+            "key_concepts": [],
+            "ocr_errors": [],
+            "wikilinks": []
+        }
+except:
+    ai_data = {
+        "topic": "Scanned Notes",
+        "suggested_title": "Scanned Note - " + detected_course,
+        "key_concepts": [],
+        "ocr_errors": [],
+        "wikilinks": []
+    }
+
+print("[4/4] AI Recommendations:")
+print("-" * 60)
+print(f"Topic: {ai_data.get('topic', 'Unknown')}")
+print(f"Suggested Title: {ai_data.get('suggested_title', 'Unknown')}")
+print(f"Course: {detected_course}")
+print()
+print("Key Concepts:")
+for concept in ai_data.get('key_concepts', [])[:5]:
+    print(f"  - {concept}")
+print()
+if ai_data.get('ocr_errors'):
+    print("OCR Corrections:")
+    for error in ai_data.get('ocr_errors', [])[:3]:
+        print(f"  - {error}")
+    print()
+print("Suggested Wikilinks:")
+for link in ai_data.get('wikilinks', [])[:5]:
+    print(f"  - {link}")
+print("-" * 60)
+
+# Save results to temp file for reference
+import tempfile
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    json.dump({
+        'scan': '$SCAN_IMAGE',
+        'ocr_text': ocr_text,
+        'detected_course': detected_course,
+        'ai_analysis': ai_data,
+        'related_notes': [meta['filename'] for meta in search_results['metadatas'][0]]
+    }, f, indent=2)
+    print()
+    print(f"Full results saved to: {f.name}")
+
+PYEOF
+
+echo ""
+echo "════════════════════════════════════════════════════"
+echo "  Analysis Complete!"
+echo "════════════════════════════════════════════════════"
+echo ""
+echo "Next: Use this info to create proper Obsidian note"

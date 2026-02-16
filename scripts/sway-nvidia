@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Custom Sway NVIDIA Wrapper
+# Combines swayfx-nvidia wrapper + wlroots-env-nvidia settings
+
+# NVIDIA-specific wlroots environment
+export WLR_NO_HARDWARE_CURSORS=1
+export WLR_RENDERER=vulkan
+export XDG_SESSION_TYPE=wayland
+export QT_QPA_PLATFORM=wayland
+export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+export MOZ_ENABLE_WAYLAND=1
+export MOZ_USE_XINPUT2=1
+export GBM_BACKEND=nvidia-drm
+export __GL_GSYNC_ALLOWED=0
+export __GL_VRR_ALLOWED=0
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+# XWAYLAND_NO_GLAMOR=1  # DISABLED - This kills gaming performance!
+
+# Launch sway with NVIDIA-friendly flags
+# --unsupported-gpu: Allow NVIDIA (officially unsupported)
+exec sway --unsupported-gpu "$@"

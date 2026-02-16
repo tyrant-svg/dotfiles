@@ -1,0 +1,47 @@
+#!/bin/bash
+# Test AI OCR on existing scan
+
+# Auto-activate virtual environment
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+SCAN_IMAGE="/mnt/vol_ii/Obsidian/University of Idaho/Assets/Scan_20260215_154806_0001.png"
+
+if [ ! -f "$SCAN_IMAGE" ]; then
+    echo "Error: Scan not found at $SCAN_IMAGE"
+    exit 1
+fi
+
+echo "Testing EasyOCR on your handwritten scan..."
+echo ""
+
+python3 << PYEOF
+import easyocr
+import time
+
+print("Initializing EasyOCR (CPU mode - takes ~30 seconds first time)...")
+reader = easyocr.Reader(['en'], gpu=False)  # Force CPU mode
+
+print("Running OCR on your scan...")
+start = time.time()
+
+results = reader.readtext('$SCAN_IMAGE')
+
+elapsed = time.time() - start
+
+print(f"\n✓ OCR complete in {elapsed:.1f} seconds\n")
+print("="*60)
+print("EXTRACTED TEXT:")
+print("="*60)
+print()
+
+for detection in results:
+    text = detection[1]
+    confidence = detection[2]
+    print(f"{text} (confidence: {confidence:.2f})")
+
+print()
+print("="*60)
+print(f"\nTotal: {len(results)} text segments detected")
+PYEOF

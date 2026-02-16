@@ -1,0 +1,259 @@
+#!/bin/bash
+# Process existing images (phone scans, photos) to Obsidian with OCR
+# Usage: process-image-to-obsidian image1.jpg [image2.jpg ...] -t "Title" -c COURSE
+
+set -euo pipefail
+
+# Configuration
+VAULT_PATH="/mnt/vol_ii/Obsidian/University of Idaho"
+INBOX_PATH="$VAULT_PATH/00 - Inbox"
+ASSETS_PATH="$VAULT_PATH/Assets"
+
+# Colors
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+print_info() { echo -e "${CYAN}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+print_error() { echo -e "${RED}[✗]${NC} $1"; }
+
+show_usage() {
+    cat << EOF
+Usage: process-image-to-obsidian IMAGE [IMAGE...] -t TITLE [OPTIONS]
+
+Process existing images (phone scans, photos) into Obsidian notes with OCR.
+
+REQUIRED:
+    IMAGE               One or more image files (jpg, png, pdf)
+    -t, --title TITLE   Note title
+
+OPTIONS:
+    -c, --course CODE   Course code (e.g., FOR3100)
+    -g, --tags TAGS     Comma-separated tags
+    -h, --help          Show this help
+
+EXAMPLES:
+    # Single image
+    process-image-to-obsidian ~/Downloads/scan1.jpg -t "Lecture Notes" -c FOR3100
+
+    # Multiple images (will be combined into one note)
+    process-image-to-obsidian ~/Downloads/scan*.jpg -t "Week 3 Notes" -c ENT4690
+
+    # With tags
+    process-image-to-obsidian photo.png -t "Lab Notes" -c FIR3326 -g "lab,fire-ecology"
+
+NOTES:
+    - Supports: .jpg, .jpeg, .png, .pdf
+    - Images are copied to Assets/ folder
+    - OCR runs automatically (tesseract)
+    - Creates note in Inbox for review
+
+EOF
+}
+
+# Parse arguments
+IMAGE_FILES=()
+TITLE=""
+COURSE=""
+TAGS=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -t|--title)
+            TITLE="$2"
+            shift 2
+            ;;
+        -c|--course)
+            COURSE="$2"
+            shift 2
+            ;;
+        -g|--tags)
+            TAGS="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -*)
+            print_error "Unknown option: $1"
+            show_usage
+            exit 1
+            ;;
+        *)
+            # It's an image file
+            if [ -f "$1" ]; then
+                IMAGE_FILES+=("$1")
+            else
+                print_error "File not found: $1"
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Validate
+if [ ${#IMAGE_FILES[@]} -eq 0 ]; then
+    print_error "No image files provided"
+    show_usage
+    exit 1
+fi
+
+if [ -z "$TITLE" ]; then
+    print_error "Title is required (-t)"
+    show_usage
+    exit 1
+fi
+
+print_info "Processing ${#IMAGE_FILES[@]} image(s)..."
+
+# Prepare metadata
+DATE=$(date +'%Y-%m-%d')
+TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
+SAFE_TITLE=$(echo "$TITLE" | sed 's/[^a-zA-Z0-9 ]//g' | sed 's/ /_/g')
+
+# Build tags
+TAG_ARRAY="scanned-notes"
+if [ -n "$COURSE" ]; then
+    TAG_ARRAY="$TAG_ARRAY, $COURSE"
+fi
+if [ -n "$TAGS" ]; then
+    TAG_ARRAY="$TAG_ARRAY, $TAGS"
+fi
+
+# Process images
+ASSET_FILES=()
+OCR_TEXT=""
+
+for i in "${!IMAGE_FILES[@]}"; do
+    img="${IMAGE_FILES[$i]}"
+    page_num=$((i + 1))
+    ext="${img##*.}"
+
+    print_info "Processing: $(basename "$img")"
+
+    # Copy to assets with organized name
+    asset_name="scan_${SAFE_TITLE}_${TIMESTAMP}_p${page_num}.${ext}"
+    cp "$img" "$ASSETS_PATH/$asset_name"
+    ASSET_FILES+=("$asset_name")
+    print_success "Saved: $asset_name"
+
+    # Run OCR
+    print_info "Running OCR on page $page_num..."
+
+    if [ ${#IMAGE_FILES[@]} -gt 1 ]; then
+        OCR_TEXT+="## Page $page_num\n\n"
+    fi
+
+    # Handle PDF differently
+    if [[ "$ext" == "pdf" ]]; then
+        # Use ocrmypdf if available, otherwise skip OCR for PDF
+        if command -v ocrmypdf &>/dev/null; then
+            temp_pdf="/tmp/ocr_temp_$$.pdf"
+            if ocrmypdf "$img" "$temp_pdf" --force-ocr --output-type pdf 2>/dev/null; then
+                if command -v pdftotext &>/dev/null; then
+                    pdftotext "$temp_pdf" - 2>/dev/null >> /tmp/ocr_$$.txt || true
+                fi
+                rm -f "$temp_pdf"
+            fi
+        else
+            OCR_TEXT+="[PDF OCR not available - install ocrmypdf]\n\n"
+        fi
+    else
+        # Regular image OCR
+        tesseract "$img" stdout 2>/dev/null >> /tmp/ocr_$$.txt || print_warning "OCR issues with $(basename "$img")"
+    fi
+done
+
+# Read OCR results
+if [ -f /tmp/ocr_$$.txt ]; then
+    OCR_CONTENT=$(cat /tmp/ocr_$$.txt)
+    rm -f /tmp/ocr_$$.txt
+else
+    OCR_CONTENT="[OCR text extraction failed - manual transcription needed]"
+fi
+
+# Create markdown note
+NOTE_FILE="$INBOX_PATH/${TITLE}.md"
+
+cat > "$NOTE_FILE" <<EOF
+---
+title: "$TITLE"
+date: $DATE
+tags: [$TAG_ARRAY]
+type: scanned-notes
+$([ -n "$COURSE" ] && echo "course: $COURSE")
+scanned: $TIMESTAMP
+pages: ${#IMAGE_FILES[@]}
+source: processed-images
+---
+
+# $TITLE
+
+**Date:** $DATE
+$([ -n "$COURSE" ] && echo "**Course:** [[$COURSE]]")
+**Source:** Processed images/phone scans
+**Pages:** ${#IMAGE_FILES[@]}
+
+---
+
+## Images
+
+EOF
+
+# Add image embeds
+for asset in "${ASSET_FILES[@]}"; do
+    echo "![[${asset}]]" >> "$NOTE_FILE"
+    echo "" >> "$NOTE_FILE"
+done
+
+cat >> "$NOTE_FILE" <<EOF
+
+---
+
+## OCR Text (Raw)
+
+> [!note] OCR Extraction
+> Text below was automatically extracted. Review and correct as needed.
+
+$OCR_CONTENT
+
+---
+
+## Cleaned Notes
+
+<!-- Edit and organize the OCR text above into proper notes below -->
+
+
+
+---
+
+## Related Notes
+
+- [[00 - Inbox]]
+$([ -n "$COURSE" ] && echo "- [[$COURSE MOC]]")
+
+---
+
+*Processed with process-image-to-obsidian on $DATE*
+EOF
+
+print_success "Note created: $NOTE_FILE"
+
+# Open in Obsidian
+if command -v obsidian &>/dev/null; then
+    swaymsg 'workspace 1; exec obsidian' &>/dev/null || true
+fi
+
+# Notification
+if command -v notify-send &>/dev/null; then
+    notify-send "📝 Images Processed" "Created: $TITLE\nPages: ${#IMAGE_FILES[@]}"
+fi
+
+print_success "✨ Processing complete! Check your Obsidian Inbox."
+print_info "Use 'sort-scanned-notes' to organize this note into a course folder."

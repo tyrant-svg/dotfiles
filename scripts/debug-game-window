@@ -1,0 +1,30 @@
+#!/bin/bash
+# Debug tool to check if game window rules are matching
+# Run this while a game is open to see its window properties
+
+echo "=== Active Window Info ==="
+swaymsg -t get_tree | jq -r '
+  .. |
+  select(.focused? == true) |
+  {
+    class: .window_properties.class,
+    instance: .window_properties.instance,
+    title: .name,
+    app_id: .app_id,
+    pid: .pid,
+    fullscreen: .fullscreen_mode
+  }
+'
+
+echo ""
+echo "=== All Game Windows ==="
+swaymsg -t get_tree | jq -r '
+  .. |
+  select(.window_properties.class? | test("steam_app|x86_64|Deadlock")) |
+  {
+    class: .window_properties.class,
+    title: .name,
+    fullscreen: .fullscreen_mode,
+    focused: .focused
+  }
+'

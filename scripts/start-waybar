@@ -1,0 +1,5 @@
+#!/bin/bash
+# Start waybar with proper cleanup
+killall waybar 2>/dev/null
+sleep 0.5
+waybar -b bar-0 &

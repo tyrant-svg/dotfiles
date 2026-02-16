@@ -1,0 +1,47 @@
+#!/bin/bash
+# YouTube in terminal with mpv + yt-dlp
+
+show_help() {
+    cat << 'HELP'
+YouTube Terminal Player
+
+Usage:
+  yt <search query>        Search and play video
+  yt -m <search query>     Audio only (music mode)
+  yt -l <url>              Play from URL
+  yt -d <url>              Download video
+  
+Examples:
+  yt blade runner ambient
+  yt -m synthwave mix
+  yt -l https://youtube.com/watch?v=xxxxx
+  
+HELP
+}
+
+case "$1" in
+    -h|--help)
+        show_help
+        ;;
+    -m|--music)
+        shift
+        echo "🎵 Searching YouTube for: $*"
+        mpv --no-video --ytdl-format=bestaudio "ytdl://ytsearch:$*"
+        ;;
+    -l|--link)
+        shift
+        mpv "$1"
+        ;;
+    -d|--download)
+        shift
+        yt-dlp "$1"
+        ;;
+    *)
+        if [[ -z "$*" ]]; then
+            show_help
+        else
+            echo "🎬 Searching YouTube for: $*"
+            mpv "ytdl://ytsearch:$*"
+        fi
+        ;;
+esac

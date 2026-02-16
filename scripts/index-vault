@@ -1,0 +1,95 @@
+#!/bin/bash
+# Index Obsidian vault for AI searching
+
+# Auto-activate venv
+if [ -z "$VIRTUAL_ENV" ]; then
+    source "$HOME/.ai-scanning-venv/bin/activate"
+fi
+
+python3 << 'PYEOF'
+import os
+from pathlib import Path
+import chromadb
+from chromadb.utils import embedding_functions
+
+VAULT_PATH = Path("/mnt/vol_ii/Obsidian/University of Idaho")
+
+print("Building vault index...")
+print(f"Vault: {VAULT_PATH}")
+print()
+
+# Find all markdown files
+md_files = list(VAULT_PATH.rglob("*.md"))
+print(f"Found {len(md_files)} markdown files")
+
+# Create ChromaDB collection
+client = chromadb.PersistentClient(path=str(Path.home() / ".ai-scanning-db"))
+
+# Use sentence transformers for embeddings
+sentence_transformer_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+    model_name="all-MiniLM-L6-v2"
+)
+
+# Delete existing collection if it exists
+try:
+    client.delete_collection(name="vault_notes")
+except:
+    pass
+
+collection = client.create_collection(
+    name="vault_notes",
+    embedding_function=sentence_transformer_ef
+)
+
+print("Indexing notes...")
+
+# Index each file
+documents = []
+metadatas = []
+ids = []
+
+for i, md_file in enumerate(md_files):
+    try:
+        # Skip very large files and assets
+        if md_file.stat().st_size > 500000:  # Skip files > 500KB
+            continue
+        if "Assets" in str(md_file):
+            continue
+
+        content = md_file.read_text(encoding='utf-8', errors='ignore')
+
+        # Extract course from path or filename
+        course = "unknown"
+        for part in md_file.parts:
+            if any(code in part for code in ['FOR', 'ENT', 'FIR', 'ECON', 'BIO', 'ASM']):
+                course = part.split()[0] if ' ' in part else part
+                break
+
+        documents.append(content[:5000])  # First 5000 chars
+        metadatas.append({
+            "filename": md_file.name,
+            "path": str(md_file.relative_to(VAULT_PATH)),
+            "course": course
+        })
+        ids.append(str(i))
+
+        if (i + 1) % 50 == 0:
+            print(f"  Indexed {i + 1}/{len(md_files)} files...")
+
+    except Exception as e:
+        print(f"  Skipped {md_file.name}: {e}")
+
+# Add to collection
+if documents:
+    collection.add(
+        documents=documents,
+        metadatas=metadatas,
+        ids=ids
+    )
+
+print()
+print(f"✓ Indexed {len(documents)} notes")
+print(f"✓ Database saved to: ~/.ai-scanning-db/")
+print()
+print("Try: search-vault 'bark beetles in ponderosa pine'")
+PYEOF

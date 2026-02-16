@@ -1,0 +1,28 @@
+#!/bin/bash
+# Steam launcher with GTK2 fix + NVIDIA gaming optimizations
+# The --reset flag prevents X Window errors from cached state
+
+# CRITICAL: Unset Wayland-specific vars that prevent XWayland windows from appearing
+unset GBM_BACKEND
+unset LIBVA_DRIVER_NAME
+
+# GTK2 theme override (Breeze has parsing errors, use Raleigh)
+export GTK2_RC_FILES=/usr/share/themes/Raleigh/gtk-2.0/gtkrc
+
+# Force X11 backend for Steam UI (required for XWayland on Wayland)
+export GDK_BACKEND=x11
+
+# NVIDIA Gaming Optimizations (applied to all Steam games)
+export __GL_GSYNC_ALLOWED=1
+export __GL_VRR_ALLOWED=1
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export __GL_THREADED_OPTIMIZATION=1
+export __GL_MaxFramesAllowed=1
+export __GL_SYNC_TO_VBLANK=0
+export PROTON_ENABLE_NVAPI=1
+export PROTON_HIDE_NVIDIA_GPU=0
+export DXVK_ASYNC=1
+export DXVK_STATE_CACHE=1
+export VKD3D_CONFIG=dxr11,dxr
+
+exec /usr/sbin/steam --reset "$@"

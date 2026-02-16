@@ -1,0 +1,88 @@
+#!/bin/bash
+# Daily coding practice launcher
+# Usage: daily-coding <language>
+
+LANG="$1"
+EXERCISES_DIR="$HOME/University of Idaho/Programming/${LANG^}/Exercises"
+TODAY=$(date +%Y-%m-%d)
+
+if [ -z "$LANG" ]; then
+    echo "Usage: daily-coding <r|python|rust|sql>"
+    exit 1
+fi
+
+mkdir -p "$EXERCISES_DIR"
+
+case "${LANG,,}" in
+    r)
+        cd "$EXERCISES_DIR" || exit
+        EXERCISE_FILE="exercise-$TODAY.R"
+        cat > "$EXERCISE_FILE" <<EOF
+# Daily R Practice
+# Date: $TODAY
+
+library(tidyverse)
+
+# Today's exercise:
+# 1. Load sample data
+# 2. Perform analysis
+# 3. Create visualization
+
+EOF
+        swaymsg "workspace 2; exec rstudio '$EXERCISE_FILE'" &
+        notify-send "Daily Coding: R" "Exercise file ready"
+        ;;
+
+    python)
+        cd "$EXERCISES_DIR" || exit
+        EXERCISE_FILE="exercise_$TODAY.py"
+        cat > "$EXERCISE_FILE" <<EOF
+#!/usr/bin/env python3
+# Daily Python Practice
+# Date: $TODAY
+
+def main():
+    """Today's exercise"""
+    pass
+
+if __name__ == "__main__":
+    main()
+EOF
+        chmod +x "$EXERCISE_FILE"
+        swaymsg "workspace 3; exec code-oss '$EXERCISE_FILE'" &
+        notify-send "Daily Coding: Python" "Exercise file ready"
+        ;;
+
+    rust)
+        cd "$EXERCISES_DIR" || exit
+        EXERCISE_NAME="exercise-$(date +%Y%m%d)"
+        if [ ! -d "$EXERCISE_NAME" ]; then
+            cargo new "$EXERCISE_NAME"
+        fi
+        cd "$EXERCISE_NAME" || exit
+        swaymsg "workspace 3; exec code-oss '$EXERCISES_DIR/$EXERCISE_NAME'" &
+        notify-send "Daily Coding: Rust" "Exercise project ready"
+        ;;
+
+    sql)
+        cd "$EXERCISES_DIR" || exit
+        EXERCISE_FILE="exercise-$TODAY.sql"
+        cat > "$EXERCISE_FILE" <<EOF
+-- Daily SQL Practice
+-- Date: $TODAY
+
+-- Today's exercise:
+
+EOF
+        swaymsg "workspace 4; exec kitty nvim '$EXERCISE_FILE'" &
+        notify-send "Daily Coding: SQL" "Exercise file ready"
+        ;;
+
+    *)
+        echo "Usage: daily-coding <r|python|rust|sql>"
+        exit 1
+        ;;
+esac
+
+echo "Daily ${LANG} practice started!"
+echo "File: $EXERCISES_DIR"

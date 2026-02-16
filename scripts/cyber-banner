@@ -1,0 +1,41 @@
+#!/bin/bash
+# Cyberpunk ASCII banner with fastfetch integration
+
+# Colors
+WHITE='\033[1;37m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# White ASCII art (FIRE!)
+echo -e "${WHITE}"
+cat << "EOF"
+   ▄████▄ ▓██   ██▓ ▄▄▄▄   ▓█████  ██▀███
+  ▒██▀ ▀█  ▒██  ██▒▓█████▄ ▓█   ▀ ▓██ ▒ ██▒
+  ▒▓█    ▄  ▒██ ██░▒██▒ ▄██▒███   ▓██ ░▄█ ▒
+  ▒▓▓▄ ▄██▒ ░ ▐██▓░▒██░█▀  ▒▓█  ▄ ▒██▀▀█▄
+  ▒ ▓███▀ ░ ░ ██▒▓░░▓█  ▀█▓░▒████▒░██▓ ▒██▒
+  ░ ░▒ ▒  ░  ██▒▒▒ ░▒▓███▀▒░░ ▒░ ░░ ▒▓ ░▒▓░
+    ░  ▒   ▓██ ░▒░ ▒░▒   ░  ░ ░  ░  ░▒ ░ ▒░
+  ░        ▒ ▒ ░░   ░    ░    ░     ░░   ░
+  ░ ░      ░ ░      ░         ░  ░   ░
+  ░        ░ ░           ░
+EOF
+echo -e "${CYAN}      P U N K    T E R M I N A L${NC}"
+echo ""
+
+# Compact fastfetch with system info
+if command -v fastfetch &> /dev/null; then
+    fastfetch --logo none --color magenta
+else
+    # Fallback if fastfetch not available
+    echo -e "${PURPLE}┌─────────────────────────────────────────┐${NC}"
+    echo -e "${PURPLE}│${NC} System: ${CYAN}$(uname -n)${NC}"
+    echo -e "${PURPLE}│${NC} User: ${CYAN}$USER${NC}"
+    echo -e "${PURPLE}│${NC} Kernel: ${CYAN}$(uname -r)${NC}"
+    echo -e "${PURPLE}└─────────────────────────────────────────┘${NC}"
+fi
+
+echo ""
+echo -e "${PURPLE}AI Assistant: ${CYAN}Super+I${NC} or ${CYAN}ai-code${NC}"
+echo ""

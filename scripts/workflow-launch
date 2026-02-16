@@ -1,0 +1,111 @@
+#!/bin/bash
+# Unified workflow launcher
+# Usage: workflow-launch <workflow-type> [args]
+
+WORKFLOW="$1"
+shift  # Remove first arg, rest are optional parameters
+
+case "$WORKFLOW" in
+    r-analysis)
+        # Launch R analysis environment
+        # RStudio + Obsidian + Terminal
+        swaymsg 'workspace 2; exec rstudio' &
+        sleep 1
+        swaymsg 'workspace 1; exec obsidian' &
+        sleep 0.5
+        swaymsg 'workspace 4; exec kitty' &
+        sleep 0.5
+        swaymsg 'workspace 2'  # Focus on RStudio
+        notify-send "Workflow: R Analysis" "RStudio, Obsidian, and Terminal ready"
+        ;;
+
+    rust-dev)
+        PROJECT_PATH="$1"
+        if [ -z "$PROJECT_PATH" ]; then
+            PROJECT_PATH="$HOME/rust-projects"
+        fi
+        # Launch Rust development environment
+        swaymsg "workspace 3; exec code-oss '$PROJECT_PATH'" &
+        sleep 1
+        swaymsg "workspace 4; exec kitty --directory '$PROJECT_PATH'" &
+        sleep 0.5
+        swaymsg 'workspace 3'  # Focus on VSCode
+        notify-send "Workflow: Rust Dev" "VSCode and Terminal ready"
+        ;;
+
+    python-dev)
+        PROJECT_PATH="$1"
+        if [ -z "$PROJECT_PATH" ]; then
+            PROJECT_PATH="$HOME/python-projects"
+        fi
+        # Launch Python development environment
+        swaymsg "workspace 3; exec code-oss '$PROJECT_PATH'" &
+        sleep 1
+        swaymsg "workspace 4; exec kitty --directory '$PROJECT_PATH'" &
+        sleep 0.5
+        swaymsg 'workspace 3'  # Focus on VSCode
+        notify-send "Workflow: Python Dev" "VSCode and Terminal ready"
+        ;;
+
+    obsidian-focus)
+        # Obsidian focus mode with DND
+        swaymsg 'workspace 1; exec obsidian' &
+        sleep 1
+        makoctl mode -a dnd
+        notify-send -u low "Focus Mode" "Obsidian launched, notifications muted"
+        ;;
+
+    note-capture)
+        # Quick note capture
+        VAULT_PATH="$HOME/University of Idaho"
+        NOTE_TITLE="Quick Note $(date +'%Y-%m-%d %H:%M')"
+        # Create quick note file
+        NOTE_FILE="$VAULT_PATH/${NOTE_TITLE}.md"
+        cat > "$NOTE_FILE" <<EOF
+---
+title: "$NOTE_TITLE"
+date: $(date +'%Y-%m-%d')
+tags: [quick-note]
+---
+
+# ${NOTE_TITLE}
+
+EOF
+        # Open in Obsidian
+        swaymsg 'workspace 1; exec obsidian' &
+        notify-send "Quick Note" "Created: $NOTE_TITLE"
+        ;;
+
+    course-work)
+        COURSE="$1"
+        if [ -z "$COURSE" ]; then
+            notify-send "Error" "Please specify course code (e.g., FOR4400)"
+            exit 1
+        fi
+        # Launch full course environment
+        COURSE_DIR="$HOME/University of Idaho/$COURSE"
+        if [ ! -d "$COURSE_DIR" ]; then
+            notify-send "Error" "Course directory not found: $COURSE"
+            exit 1
+        fi
+        swaymsg 'workspace 1; exec obsidian' &
+        sleep 1
+        swaymsg "workspace 4; exec kitty --directory '$COURSE_DIR'" &
+        sleep 0.5
+        swaymsg 'workspace 5; exec brave-browser' &
+        notify-send "Course Workflow" "Environment ready for $COURSE"
+        ;;
+
+    *)
+        echo "Usage: workflow-launch <workflow-type> [args]"
+        echo ""
+        echo "Available workflows:"
+        echo "  r-analysis           - RStudio + Obsidian + Terminal"
+        echo "  rust-dev [path]      - VSCode + Terminal for Rust"
+        echo "  python-dev [path]    - VSCode + Terminal for Python"
+        echo "  obsidian-focus       - Obsidian with DND mode"
+        echo "  note-capture         - Quick note creation"
+        echo "  course-work <code>   - Full course environment"
+        exit 1
+        ;;
+esac

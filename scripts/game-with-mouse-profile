@@ -1,0 +1,27 @@
+#!/bin/bash
+# Wrapper to launch games with gaming mouse profile
+# Usage: game-with-mouse-profile <command> [args...]
+# Example in Steam launch options: ~/.local/bin/game-with-mouse-profile %command%
+
+MOUSE_NAME="ASUSTeK ROG SPATHA X"
+
+# Save current profile to restore later
+ORIGINAL_PROFILE=$(ratbagctl "$MOUSE_NAME" info 2>/dev/null | grep "Profile.*active" | grep -oP 'Profile \K\d+')
+
+# Switch to gaming profile (Profile 0 - RED LED)
+echo "Switching to Gaming Profile..."
+ratbagctl "$MOUSE_NAME" profile active set 0 2>/dev/null
+notify-send "🎮 Gaming Mode" "Mouse switched to Gaming Profile\nLED: RED" -t 2000 -i input-gaming
+
+# Launch the game (passes all arguments)
+"$@"
+GAME_EXIT_CODE=$?
+
+# Switch back to original profile when game exits
+if [ -n "$ORIGINAL_PROFILE" ]; then
+    echo "Restoring original mouse profile..."
+    ratbagctl "$MOUSE_NAME" profile active set "$ORIGINAL_PROFILE" 2>/dev/null
+    notify-send "🖱️ Desktop Mode" "Mouse restored to Desktop Profile\nLED: GREEN" -t 2000 -i input-mouse
+fi
+
+exit $GAME_EXIT_CODE

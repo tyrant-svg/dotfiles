@@ -1,0 +1,35 @@
+# Cache and temporary files
+*.cache
+*.log
+*.tmp
+*.swp
+*~
+
+# Sensitive data
+*password*
+*token*
+*secret*
+*.key
+*.pem
+
+# Large files
+*.mp4
+*.mkv
+*.iso
+*.img
+
+# Specific excludes
+.config/*/cache/
+.config/*/Cache/
+.config/BraveSoftware/
+.config/Code*/
+scripts/*venv*/
+
+# System specific
+.DS_Store
+Thumbs.db
+
+# Large binaries
+scripts/claude
+scripts/*.AppImage
+scripts/*.bin
