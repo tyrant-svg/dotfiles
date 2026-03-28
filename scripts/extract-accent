@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+# extract-accent — extract most vibrant/saturated dominant color from image
+# Usage: extract-accent <image_path>
+# Output: hex color without # (e.g. ddc66e)
+# Designed for cyberpunk wallpapers: favors bright saturated neons/accents
+
+import sys
+import colorsys
+from PIL import Image
+
+def get_accent(path):
+    img = Image.open(path).convert('RGB')
+    # resize — captures local color variance better than 1x1 average
+    img = img.resize((256, 256))
+
+    # quantize to 24 colors to find dominant palette
+    quantized = img.quantize(colors=24)
+    palette_raw = quantized.getpalette()[:24 * 3]
+
+    colors = []
+    for i in range(0, len(palette_raw), 3):
+        r, g, b = palette_raw[i], palette_raw[i+1], palette_raw[i+2]
+        h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+        colors.append((r, g, b, h, s, v))
+
+    # score: saturation weighted more heavily, needs minimum brightness
+    # lower brightness threshold (0.2) catches neon-on-black cyberpunk accents
+    candidates = [(r, g, b, s * 0.7 + v * 0.3)
+                  for r, g, b, h, s, v in colors
+                  if s > 0.2 and v > 0.2]
+
+    if not candidates:
+        # fallback: most saturated regardless of brightness
+        candidates = [(r, g, b, s) for r, g, b, h, s, v in colors if s > 0.1]
+
+    if not candidates:
+        return None
+
+    # pick highest scoring
+    best = max(candidates, key=lambda x: x[3])
+    r, g, b = best[0], best[1], best[2]
+    return f"{r:02x}{g:02x}{b:02x}"
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        sys.exit(1)
+    result = get_accent(sys.argv[1])
+    if result:
+        print(result)
+    else:
+        sys.exit(1)

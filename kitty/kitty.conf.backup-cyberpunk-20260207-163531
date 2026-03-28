@@ -1,0 +1,93 @@
+# BEGIN_KITTY_THEME
+include theme.conf
+# END_KITTY_THEME
+
+# ============================================================================
+# WORKFLOW OPTIMIZATION - Enhanced Kitty Configuration
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Font Configuration
+# ----------------------------------------------------------------------------
+font_family      Maple Mono
+bold_font        auto
+italic_font      auto
+bold_italic_font auto
+font_size        13.0
+
+# ----------------------------------------------------------------------------
+# Performance Settings
+# ----------------------------------------------------------------------------
+sync_to_monitor yes
+repaint_delay   8
+input_delay     2
+
+# ----------------------------------------------------------------------------
+# Window Layout
+# ----------------------------------------------------------------------------
+remember_window_size  yes
+initial_window_width  1200
+initial_window_height 800
+window_padding_width  4
+
+# ----------------------------------------------------------------------------
+# Tab Bar (matching Sway theme)
+# ----------------------------------------------------------------------------
+tab_bar_edge            top
+tab_bar_style           separator
+tab_separator           " │ "
+tab_title_template      "{index}: {title}"
+
+# Tab colors matching gh0st's aesthetic
+active_tab_foreground   #141216
+active_tab_background   #AC82E9
+active_tab_font_style   bold
+inactive_tab_foreground #d8cab8
+inactive_tab_background #27232b
+inactive_tab_font_style normal
+
+# ----------------------------------------------------------------------------
+# URL Handling
+# ----------------------------------------------------------------------------
+detect_urls         yes
+open_url_with       brave-browser
+url_style           curly
+url_color           #AC82E9
+url_prefixes        http https file ftp gemini irc gopher mailto news git
+
+# ----------------------------------------------------------------------------
+# Mouse
+# ----------------------------------------------------------------------------
+mouse_hide_wait     3.0
+copy_on_select      yes
+
+# ----------------------------------------------------------------------------
+# Cursor
+# ----------------------------------------------------------------------------
+cursor_shape            block
+cursor_blink_interval   0.5
+cursor_stop_blinking_after 15.0
+
+# ----------------------------------------------------------------------------
+# Scrollback
+# ----------------------------------------------------------------------------
+scrollback_lines        10000
+scrollback_pager        less --chop-long-lines --RAW-CONTROL-CHARS +INPUT_LINE_NUMBER
+
+# ----------------------------------------------------------------------------
+# Bell
+# ----------------------------------------------------------------------------
+enable_audio_bell    no
+visual_bell_duration 0.0
+
+# ----------------------------------------------------------------------------
+# Advanced
+# ----------------------------------------------------------------------------
+shell                 .
+editor                nvim
+allow_remote_control  yes
+listen_on             unix:/tmp/kitty
+
+# ============================================================================
+# END OF WORKFLOW OPTIMIZATION
+# ============================================================================

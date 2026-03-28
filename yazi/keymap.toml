@@ -1,0 +1,43 @@
+[manager]
+prepend_keymap = [
+	# --- smart-filter: live incremental filter ---
+	{ on = "F", run = "plugin smart-filter", desc = "Smart filter" },
+
+	# --- jump-to-char: f/F to jump to char on screen ---
+	{ on = "f", run = "plugin jump-to-char", desc = "Jump to char" },
+
+	# --- diff: compare hovered file with yanked ---
+	{ on = ["<C-d>"], run = "plugin diff", desc = "Diff with yanked file" },
+
+	# --- chmod: quick permissions ---
+	{ on = ["<C-x>"], run = "plugin chmod", desc = "Chmod selected" },
+
+	# --- ouch: compress/decompress archives ---
+	{ on = ["<C-a>"], run = "plugin ouch --args=zip",  desc = "Compress to zip" },
+	{ on = ["<C-e>"], run = "plugin ouch --args=unzip", desc = "Extract archive" },
+
+	# --- bookmarks ---
+	{ on = ["b", "m"], run = "plugin bookmarks --args=save",   desc = "Bookmark: save" },
+	{ on = ["b", "g"], run = "plugin bookmarks --args=jump",   desc = "Bookmark: jump" },
+	{ on = ["b", "d"], run = "plugin bookmarks --args=delete", desc = "Bookmark: delete" },
+
+	# --- zoxide: jump to frecent dirs ---
+	{ on = "Z", run = "plugin zoxide", desc = "Zoxide jump" },
+
+	# --- lazygit: open lazygit in current dir ---
+	{ on = ["g", "l"], run = "plugin lazygit", desc = "Lazygit" },
+
+	# --- show/hide hidden files toggle ---
+	{ on = "H", run = "hidden toggle", desc = "Toggle hidden files" },
+
+	# --- quick nav to your frequent locations ---
+	{ on = ["g", "v"], run = "cd /mnt/vol_ii/Obsidian/University of Idaho", desc = "Go: Obsidian vault" },
+	{ on = ["g", "m"], run = "cd /mnt/vol_ii/Media",                         desc = "Go: Media" },
+	{ on = ["g", "M"], run = "cd /mnt/vol_ii/Media/Manga",                   desc = "Go: Manga" },
+	{ on = ["g", "b"], run = "cd /mnt/vol_ii/Media/Books",                   desc = "Go: Books" },
+	{ on = ["g", "d"], run = "cd /mnt/vol_ii/Media/Incoming",                desc = "Go: Downloads/Incoming" },
+	{ on = ["g", "s"], run = "cd ~/scripts",                                  desc = "Go: Scripts" },
+	{ on = ["g", "a"], run = "cd ~/ai-training-data",                         desc = "Go: AI training" },
+	{ on = ["g", "c"], run = "cd ~/.config",                                  desc = "Go: .config" },
+	{ on = ["g", "S"], run = "cd /mnt/vol_ii/Services",                       desc = "Go: Docker services" },
+]

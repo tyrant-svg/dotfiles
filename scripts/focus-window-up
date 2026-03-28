@@ -1,3 +1,0 @@
-#!/bin/bash
-# Focus window above (vim-style)
-xdotool getactivewindow windowmove --relative 0 -- -50 2>/dev/null

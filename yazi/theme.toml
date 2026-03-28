@@ -1,0 +1,96 @@
+# sleek_cyber yazi theme — accent from wallpaper
+
+[manager]
+cwd = { fg = "#ddc66e", bold = true }
+
+hovered         = { fg = "#16130b", bg = "#ddc66e" }
+preview_hovered = { underline = true }
+
+find_keyword  = { fg = "#ddc66e", italic = true }
+find_position = { fg = "#ffb4ab", bg = "reset", italic = true }
+
+marker_selected = { fg = "#ddc66e",  bg = "#ddc66e" }
+marker_copied   = { fg = "#aad0b2", bg = "#aad0b2" }
+marker_cut      = { fg = "#ffb4ab", bg = "#ffb4ab" }
+
+tab_active   = { fg = "#16130b", bg = "#ddc66e" }
+tab_inactive = { fg = "#4b4739", bg = "#221f17" }
+tab_width    = 1
+
+border_symbol = "│"
+border_style  = { fg = "#4b4739" }
+
+[status]
+separator_open  = ""
+separator_close = ""
+separator_style = { fg = "#4b4739", bg = "#4b4739" }
+
+mode_normal = { fg = "#16130b", bg = "#ddc66e",     bold = true }
+mode_select = { fg = "#16130b", bg = "#aad0b2", bold = true }
+mode_unset  = { fg = "#16130b", bg = "#ffb4ab", bold = true }
+
+progress_label  = { fg = "#e9e2d4", bold = true }
+progress_normal = { fg = "#ddc66e",  bg = "#221f17" }
+progress_error  = { fg = "#ffb4ab", bg = "#221f17" }
+
+permissions_t = { fg = "#d2c6a1" }
+permissions_r = { fg = "#aad0b2" }
+permissions_w = { fg = "#ffb4ab" }
+permissions_x = { fg = "#ddc66e" }
+permissions_s = { fg = "#4b4739" }
+
+[input]
+border   = { fg = "#ddc66e" }
+title    = {}
+value    = {}
+selected = { reversed = true }
+
+[select]
+border   = { fg = "#ddc66e" }
+active   = { fg = "#ddc66e" }
+inactive = {}
+
+[tasks]
+border  = { fg = "#ddc66e" }
+title   = {}
+hovered = { underline = true }
+
+[which]
+mask            = { bg = "#16130b" }
+cand            = { fg = "#ddc66e" }
+rest            = { fg = "#cdc6b4" }
+desc            = { fg = "#d2c6a1" }
+separator       = "  "
+separator_style = { fg = "#4b4739" }
+
+[help]
+on      = { fg = "#ddc66e" }
+exec    = { fg = "#d2c6a1" }
+desc    = { fg = "#cdc6b4" }
+hovered = { bg = "#221f17", bold = true }
+footer  = { fg = "#16130b", bg = "#cdc6b4" }
+
+[filetype]
+rules = [
+    { mime = "image/*",                         fg = "#d2c6a1" },
+    { mime = "video/*",                         fg = "#ddc66e" },
+    { mime = "audio/*",                         fg = "#ddc66e" },
+    { mime = "application/zip",                 fg = "#ffb4ab" },
+    { mime = "application/gzip",               fg = "#ffb4ab" },
+    { mime = "application/x-tar",              fg = "#ffb4ab" },
+    { mime = "application/x-bzip",             fg = "#ffb4ab" },
+    { mime = "application/x-bzip2",            fg = "#ffb4ab" },
+    { mime = "application/x-7z-compressed",    fg = "#ffb4ab" },
+    { mime = "application/x-rar",              fg = "#ffb4ab" },
+    { mime = "application/pdf",                fg = "#aad0b2" },
+    { mime = "text/*",                         fg = "#e9e2d4" },
+    { name = "*.rs",   fg = "#d2c6a1" },
+    { name = "*.R",    fg = "#ddc66e" },
+    { name = "*.py",   fg = "#d2c6a1" },
+    { name = "*.js",   fg = "#d2c6a1" },
+    { name = "*.json", fg = "#d2c6a1" },
+    { name = "*.toml", fg = "#d2c6a1" },
+    { name = "*.md",   fg = "#e9e2d4" },
+    { name = "*",      fg = "#e9e2d4" },
+    { name = "*/",     fg = "#ddc66e" },
+]

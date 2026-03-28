@@ -1,0 +1,132 @@
+{
+  "layer": "top",
+  "position": "top",
+  "output": "DP-1",
+  "height": 32,
+  "spacing": 0,
+  "margin-top": 8,
+  "margin-bottom": 0,
+  "margin-left": 12,
+  "margin-right": 12,
+
+  "modules-left": [
+    "sway/workspaces",
+    "sway/mode"
+  ],
+
+  "modules-center": [
+    "clock"
+  ],
+
+  "modules-right": [
+    "custom/gpu",
+    "custom/separator-dim",
+    "cpu",
+    "memory",
+    "custom/separator-dim",
+    "pulseaudio",
+    "network",
+    "custom/separator-dim",
+    "tray"
+  ],
+
+  "sway/workspaces": {
+    "disable-scroll": false,
+    "all-outputs": false,
+    "format": "{name}",
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": []
+    }
+  },
+
+  "sway/mode": {
+    "format": "<span style=\"italic\">  {}</span>",
+    "tooltip": false
+  },
+
+  "custom/separator": {
+    "format": "│",
+    "tooltip": false
+  },
+
+  "custom/separator-dim": {
+    "format": "│",
+    "tooltip": false
+  },
+
+  "custom/steam": {
+    "format": "STEAM",
+    "exec": "pgrep -x steam >/dev/null && echo 'ON' || echo 'OFF'",
+    "on-click": "pgrep -x steam >/dev/null 2>&1 && killall steam || ~/.local/bin/steam-fixed &",
+    "interval": 2,
+    "tooltip-format": "Steam: {} (click to toggle)",
+    "tooltip": true
+  },
+
+  "custom/gpu": {
+    "format": "GPU {}%",
+    "exec": "nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null || echo '0'",
+    "interval": 2,
+    "on-click": "kitty -e nvidia-smi -l 1",
+    "on-click-middle": "nvidia-settings",
+    "tooltip-format": "GPU Load: {}%"
+  },
+
+  "clock": {
+    "format": "{:%A, %B %d, %Y  |  %H:%M}",
+    "tooltip": false
+  },
+
+  "custom/logo": {
+    "format": "◈",
+    "tooltip": false
+  },
+
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 2,
+    "on-click": "kitty -e btop",
+    "on-click-middle": "kitty -e htop",
+    "tooltip": true
+  },
+
+  "memory": {
+    "format": "MEM {percentage}%",
+    "interval": 5,
+    "on-click": "kitty -e btop",
+    "on-click-middle": "kitty -e htop",
+    "tooltip-format": "RAM: {used:0.1f}GB / {total:0.1f}GB\nSwap: {swapUsed:0.1f}GB / {swapTotal:0.1f}GB"
+  },
+
+  "network": {
+    "format-wifi": "NET {bandwidthDownBytes}",
+    "format-ethernet": "NET {bandwidthDownBytes}",
+    "format-disconnected": "NET Offline",
+    "interval": 2,
+    "tooltip-format": "{ifname}\n{ipaddr}/{cidr}\nUp: {bandwidthUpBytes} Down: {bandwidthDownBytes}",
+    "on-click": "nm-connection-editor"
+  },
+
+  "pulseaudio": {
+    "format": "VOL {volume}%",
+    "format-muted": "VOL MUTE",
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-middle": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "tooltip-format": "{desc}: {volume}%"
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8,
+    "show-passive-items": true,
+    "reverse-direction": false,
+    "on-click": "activate",
+    "on-click-middle": "activate",
+    "on-click-right": "context-menu"
+  }
+}

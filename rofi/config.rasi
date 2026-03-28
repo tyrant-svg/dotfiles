@@ -1,0 +1,15 @@
+configuration {
+    modi:                "drun,run";
+    show-icons:          true;
+    icon-theme:          "Papirus-Dark";
+    terminal:            "kitty";
+    drun-display-format: "{name}";
+    disable-history:     false;
+    font:                "JetBrains Mono 13";
+    display-drun:        " ";
+    display-run:         " ";
+    sidebar-mode:        false;
+    matching:            "fuzzy";
+    sort:                true;
+    sorting-method:      "fzf";
+}

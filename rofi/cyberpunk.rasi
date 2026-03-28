@@ -1,0 +1,87 @@
+* {
+    bg: #0d0d15;
+    bg-solid: #0d0d15ee;        /* More solid for better visibility */
+    bg-select: #ac82e9;          /* Purple selection */
+    fg: #e0e0ff;                 /* Light text */
+    cyan: #00d9ff;               /* Cyan accent */
+    border-color: #ac82e9;       /* Purple border */
+    dark-purple: #1a1a2e;        /* Dark purple for input */
+}
+
+window {
+    background-color: @bg-solid;
+    border: 3px;
+    border-color: @border-color;
+    border-radius: 8px;
+    width: 650px;
+    padding: 20px;
+    transparency: "real";
+}
+
+mainbox {
+    background-color: transparent;
+    children: [ inputbar, listview ];
+    spacing: 18px;
+}
+
+inputbar {
+    background-color: @dark-purple;
+    border: 2px;
+    border-color: @cyan;
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-color: @cyan;
+    children: [ prompt, entry ];
+    spacing: 12px;
+}
+
+prompt {
+    enabled: true;
+    text-color: @border-color;
+    background-color: transparent;
+}
+
+entry {
+    placeholder: "Szukaj | 検索 | 검색 | Buscar | Maghanap...";
+    placeholder-color: #7a7a9a;
+    text-color: @fg;
+    background-color: transparent;
+    cursor: text;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    spacing: 6px;
+    scrollbar: false;
+    fixed-height: true;
+    cycle: false;
+}
+
+element {
+    background-color: transparent;
+    text-color: @fg;
+    border-radius: 6px;
+    padding: 12px 14px;
+    spacing: 12px;
+    orientation: horizontal;
+    children: [ element-icon, element-text ];
+}
+
+element selected {
+    background-color: @bg-select;
+    text-color: #ffffff;
+    border: 2px;
+    border-color: @cyan;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+}
+
+element-icon {
+    size: 32px;
+    background-color: transparent;
+}

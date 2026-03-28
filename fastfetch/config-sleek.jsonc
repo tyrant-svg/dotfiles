@@ -1,0 +1,59 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "small",
+    "color": {"1": "magenta", "2": "cyan"}
+  },
+  "display": {
+    "separator": " • ",
+    "color": {
+      "separator": "35",
+      "keys": "magenta",
+      "title": "cyan"
+    }
+  },
+  "modules": [
+    "break",
+    {
+      "type": "custom",
+      "format": "  {#35}▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓{#}"
+    },
+    {
+      "type": "custom",
+      "format": "  {#magenta}{user-name}{#}@{#cyan}{host-name}{#}  {#35}│{#}  {#magenta}CYBERPUNK SYSTEM{#}"
+    },
+    {
+      "type": "custom",
+      "format": "  {#35}▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓{#}"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "  {#35}SYSTEM{#}"
+    },
+    {"type": "os", "key": "  {#magenta}OS{#}         ", "keyWidth": 16},
+    {"type": "kernel", "key": "  {#magenta}Kernel{#}     ", "keyWidth": 16},
+    {"type": "wm", "key": "  {#magenta}WM{#}         ", "keyWidth": 16},
+    {"type": "terminal", "key": "  {#magenta}Terminal{#}  ", "keyWidth": 16},
+    {"type": "shell", "key": "  {#magenta}Shell{#}      ", "keyWidth": 16},
+    {"type": "uptime", "key": "  {#magenta}Uptime{#}     ", "keyWidth": 16},
+    {"type": "packages", "key": "  {#magenta}Packages{#}   ", "keyWidth": 16},
+    "break",
+    {
+      "type": "custom",
+      "format": "  {#35}HARDWARE{#}"
+    },
+    {"type": "cpu", "key": "  {#cyan}CPU{#}        ", "keyWidth": 16},
+    {"type": "gpu", "key": "  {#cyan}GPU{#}        ", "keyWidth": 16},
+    {"type": "memory", "key": "  {#cyan}RAM{#}        ", "keyWidth": 16},
+    {"type": "disk", "key": "  {#cyan}Root{#}       ", "keyWidth": 16},
+    {
+      "type": "disk",
+      "key": "  {#cyan}Vol_II{#}     ",
+      "keyWidth": 16,
+      "folders": "/mnt/vol_ii"
+    },
+    "break",
+    {"type": "colors", "symbol": "circle", "paddingLeft": 2}
+  ]
+}

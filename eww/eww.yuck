@@ -1,0 +1,121 @@
+; vinyl-player + HUD overlay eww widgets
+; deps: eww, playerctl, python-pillow, ffmpeg, curl
+
+; --- variables (updated by vinyl-listen.sh) ---
+(defvar music-artist "")
+(defvar music-title "Nothing playing")
+(defvar music-art "/home/gh0st/.cache/vinyl-art/placeholder.png")
+(defvar music-status "Stopped")
+(defvar vinyl-x "20px")
+(defvar vinyl-y "50px")
+
+; --- rotating frame (10fps, circular PNG rendered by rotate.py) ---
+(defpoll music-frame
+  :interval "100ms"
+  `~/.config/eww/scripts/rotate.sh`)
+
+; --- window ---
+(defwindow vinyl
+  :monitor 1
+  :geometry (geometry
+    :x vinyl-x
+    :y vinyl-y
+    :width "328px"
+    :height "410px"
+    :anchor "top left")
+  :stacking "overlay"
+  :exclusive false
+  :focusable false
+  (vinyl-widget))
+
+; --- widgets ---
+(defwidget vinyl-widget []
+  (box
+    :class "vinyl-root"
+    :orientation "v"
+    :space-evenly false
+    :spacing 0
+    (vinyl-disc)
+    (track-info)
+    (controls)))
+
+(defwidget vinyl-disc []
+  (box
+    :class "disc-wrap"
+    (image
+      :class "disc-img"
+      :path {music-frame}
+      :image-width 300
+      :image-height 300)))
+
+(defwidget track-info []
+  (box
+    :class "track-info"
+    :orientation "v"
+    :space-evenly false
+    :spacing 4
+    (label
+      :class "track-title"
+      :text {music-title}
+      :limit-width 26
+      :truncate true)
+    (label
+      :class "track-artist"
+      :text {music-artist}
+      :limit-width 26
+      :truncate true)))
+
+(defwidget controls []
+  (box
+    :class "controls"
+    :orientation "h"
+    :space-evenly true
+    (button
+      :class "ctrl-btn"
+      :onclick "~/.config/eww/scripts/music.sh --prev"
+      "⏮")
+    (button
+      :class "ctrl-btn play-btn"
+      :onclick "~/.config/eww/scripts/music.sh --toggle"
+      {music-status == "Playing" ? "⏸" : "▶"})
+    (button
+      :class "ctrl-btn"
+      :onclick "~/.config/eww/scripts/music.sh --next"
+      "⏭")))
+
+; ─── HUD overlay ──────────────────────────────────────────────────────────────
+
+; --- HUD polls ---
+(defpoll hud-cpu :interval "2s" `~/.config/eww/scripts/hud-cpu.sh`)
+(defpoll hud-mem :interval "3s" `~/.config/eww/scripts/hud-mem.sh`)
+(defpoll hud-net :interval "5s" `~/.config/eww/scripts/hud-net.sh`)
+
+; --- HUD window (top-right of center monitor) ---
+(defwindow hud
+  :monitor 1
+  :geometry (geometry
+    :x "-12px"
+    :y "12px"
+    :width "160px"
+    :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable false
+  (hud-widget))
+
+; --- HUD widget ---
+(defwidget hud-widget []
+  (box
+    :class "hud-root"
+    :orientation "v"
+    :space-evenly false
+    :spacing 4
+    (box :class "hud-row" :space-evenly false :spacing 8
+      (label :class "hud-key" :text "cpu")
+      (label :class "hud-val" :text hud-cpu))
+    (box :class "hud-row" :space-evenly false :spacing 8
+      (label :class "hud-key" :text "ram")
+      (label :class "hud-val" :text hud-mem))
+    (box :class "hud-row" :space-evenly false :spacing 8
+      (label :class "hud-key" :text "net")
+      (label :class "hud-val hud-net" :text hud-net))))

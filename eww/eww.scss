@@ -1,0 +1,40 @@
+// vinyl-player eww styles — accent from wallpaper
+$bg:       #16130b;
+$bg-glass: rgba(22, 19, 11, 0.88);
+$gold:     #ddc66e;
+$fg:       #e9e2d4;
+$muted:    #a09880;
+$border:   rgba(221, 198, 110, 0.22);
+$radius:   14px;
+
+.vinyl-root {
+  background-color: $bg-glass;
+  border: 1px solid $border;
+  border-radius: $radius;
+  padding: 14px;
+}
+.disc-wrap { background-color: transparent; padding: 0; }
+.disc-img  { background-color: transparent; }
+.track-info { padding: 10px 4px 6px 4px; }
+.track-title {
+  font-family: "JetBrains Mono Nerd Font", "JetBrains Mono", monospace;
+  font-size: 13px; font-weight: bold; color: $gold;
+}
+.track-artist {
+  font-family: "JetBrains Mono Nerd Font", "JetBrains Mono", monospace;
+  font-size: 11px; color: $muted;
+}
+.controls {
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(221, 198, 110, 0.22);
+  margin-top: 4px;
+}
+.ctrl-btn {
+  font-family: "JetBrains Mono Nerd Font", "JetBrains Mono", monospace;
+  font-size: 18px; color: $muted;
+  padding: 6px 16px; border-radius: 8px; border: none;
+  background-color: transparent;
+}
+.ctrl-btn:hover { color: $gold; background-color: rgba(221, 198, 110, 0.1); }
+.ctrl-btn:active { color: $fg; background-color: rgba(221, 198, 110, 0.18); }
+.play-btn { color: $gold; font-size: 20px; }
