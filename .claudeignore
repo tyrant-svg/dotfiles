@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+.next/
+out/
+target/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Logs & lock files
+*.log
+*.lock
+yarn.lock
+package-lock.json
+Cargo.lock
+
+# Coverage & test artifacts
+coverage/
+.nyc_output/
+
+# Minified / generated
+*.min.js
+*.min.css
+
+# Version control
+.git/
+
+# Large data / model files
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.h5
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
